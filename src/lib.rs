@@ -48,6 +48,13 @@ pub enum RegisterMinerResult {
     AlreadyRegistered,
 }
 
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq)]
+#[serde(crate = "near_sdk::serde")]
+pub enum RegisterValidatorResult {
+    Success,
+    AlreadyRegistered,
+}
+
 #[near_bindgen]
 impl Contract {
     #[init]
@@ -85,24 +92,31 @@ impl Contract {
         None
     }
 
-    // pub fn register_validator(&mut self, participant_id: AccountId) {
-    //     let validator_to_register = self.get_register_validator(participant_id.clone());
-    //     require!(validator_to_register.is_none());
+    pub fn register_validator(&mut self, new_validator_id: AccountId) -> RegisterValidatorResult {
+        if self
+            .get_register_validator(new_validator_id.clone())
+            .is_some()
+        {
+            log!(
+                "Attempted to register an already registered validator: {}",
+                new_validator_id
+            );
+            return RegisterValidatorResult::AlreadyRegistered;
+        }
 
-    //     let miner_to_register = self.get_register_miner(participant_id.clone());
-    //     require!(miner_to_register.is_none());
+        self.validators.push(new_validator_id.clone());
+        log!("Registered new validator: {}", new_validator_id);
+        RegisterValidatorResult::Success
+    }
 
-    //     self.validators.push(participant_id);
-    // }
-
-    // pub fn get_register_validator(&mut self, participant_id: AccountId) -> Option<&AccountId> {
-    //     for validator in self.validators.iter() {
-    //         if *validator == participant_id {
-    //             return Some(validator);
-    //         }
-    //     }
-    //     None
-    // }
+    pub fn get_register_validator(&mut self, miner_id: AccountId) -> Option<&AccountId> {
+        for validator in self.validators.iter() {
+            if *validator == miner_id {
+                return Some(validator);
+            }
+        }
+        None
+    }
 
     // pub fn request_governance_decision(&mut self, request_id: u64) {
     //     let new_request = Request {
@@ -350,18 +364,70 @@ mod tests {
         assert!(contract.get_register_miner(miner).is_none());
     }
 
-    // #[test]
-    // fn test_register_validator() {
-    //     let mut contract = Contract::new();
-    //     let participant_1: AccountId = "alice.near".parse().unwrap();
-    //     let participant_2: AccountId = "bob.near".parse().unwrap();
+    #[test]
+    fn test_register_validator() {
+        let mut contract = Contract::new();
+        let validator_1: AccountId = "hassel.near".parse().unwrap();
+        let validator_2: AccountId = "edson.near".parse().unwrap();
 
-    //     contract.validators.push(participant_1.clone());
-    //     contract.validators.push(participant_2.clone());
+        let result1 = contract.register_validator(validator_1.clone());
+        let result2 = contract.register_validator(validator_2.clone());
 
-    //     assert!(contract.validators[0] == participant_1);
-    //     assert!(contract.validators[1] == participant_2);
-    // }
+        assert_eq!(result1, RegisterValidatorResult::Success);
+        assert_eq!(result2, RegisterValidatorResult::Success);
+
+        assert!(contract.get_register_validator(validator_1).is_some());
+        assert!(contract.get_register_validator(validator_2).is_some());
+
+        // Assert logs
+        let logs = get_logs();
+
+        assert_eq!(logs.len(), 2);
+
+        assert_eq!(logs[0], "Registered new validator: hassel.near");
+        assert_eq!(logs[1], "Registered new validator: edson.near");
+    }
+
+    #[test]
+    fn test_register_validator_when_is_registered_returns_already_registered() {
+        let mut contract = Contract::new();
+        let validator_1: AccountId = "hassel.near".parse().unwrap();
+
+        contract.register_validator(validator_1.clone());
+
+        let result = contract.register_validator(validator_1.clone());
+
+        assert_eq!(result, RegisterValidatorResult::AlreadyRegistered);
+
+        // Assert logs
+        let logs = get_logs();
+
+        assert_eq!(logs.len(), 2);
+
+        assert_eq!(logs[0], "Registered new validator: hassel.near");
+        assert_eq!(
+            logs[1],
+            "Attempted to register an already registered validator: hassel.near"
+        );
+    }
+
+    #[test]
+    fn test_get_register_validator() {
+        let mut contract = Contract::new();
+        let validator: AccountId = "hassel.near".parse().unwrap();
+
+        contract.register_validator(validator.clone());
+
+        assert!(contract.get_register_validator(validator).is_some());
+    }
+
+    #[test]
+    fn test_get_register_validator_when_not_registered() {
+        let mut contract = Contract::new();
+        let validator: AccountId = "hassel.near".parse().unwrap();
+
+        assert!(contract.get_register_validator(validator).is_none());
+    }
 
     // #[test]
     // fn test_get_register_validator() {
