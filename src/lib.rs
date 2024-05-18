@@ -55,6 +55,15 @@ pub enum RegisterValidatorResult {
     AlreadyRegistered,
 }
 
+
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq)]
+#[serde(crate = "near_sdk::serde")]
+pub enum RegisterRequestResult {
+    Success,
+    AlreadyRegistered,
+}
+
+
 #[near_bindgen]
 impl Contract {
     #[init]
@@ -118,38 +127,34 @@ impl Contract {
         None
     }
 
-    // pub fn request_governance_decision(&mut self, request_id: u64) {
-    //     let new_request = Request {
-    //         sender: env::predecessor_account_id(),
-    //         request_id: request_id,
-    //         start_time: env::epoch_height(),
-    //         commit_miner_deadline: env::epoch_height() + COMMIT_MINER_DURATION,
-    //         reveal_miner_deadline: env::epoch_height()
-    //             + COMMIT_MINER_DURATION
-    //             + REVEAL_MINER_DURATION,
-    //         commit_validator_deadline: env::epoch_height()
-    //             + COMMIT_MINER_DURATION
-    //             + REVEAL_MINER_DURATION
-    //             + COMMIT_VALIDATOR_DURATION,
-    //         reveal_validator_deadline: env::epoch_height()
-    //             + COMMIT_MINER_DURATION
-    //             + REVEAL_MINER_DURATION
-    //             + COMMIT_VALIDATOR_DURATION
-    //             + REVEAL_VALIDATOR_DURATION,
-    //         miners_proposals: LookupMap::new(b"m"),
-    //         validators_proposals: LookupMap::new(b"v"),
-    //     };
-    //     self.requests.push(new_request);
-    // }
+    pub fn request_governance_decision(&mut self, new_request_id: u64) -> RegisterRequestResult{
 
-    // fn get_request_by_id(&mut self, request_id: u64) -> Option<&mut Request> {
-    //     for request in &mut self.requests {
-    //         if request.request_id == request_id {
-    //             return Some(request);
-    //         }
-    //     }
-    //     None
-    // }
+        //@dev Validate the request is not already registered
+        if self.get_request_by_id(new_request_id.clone()).is_some(){
+            log!("Attempted to register an already registered request: {}", new_request_id);
+            return RegisterRequestResult::AlreadyRegistered;
+        }
+
+        let new_request = Request {
+            sender: env::predecessor_account_id(),
+            request_id: new_request_id,
+            start_time: env::epoch_height(),
+            miners_proposals: LookupMap::new(b"m"),
+            validators_proposals: LookupMap::new(b"v"),
+        };
+        self.requests.push(new_request);
+        log!("Registered new request: {}", new_request_id);
+        RegisterRequestResult::Success
+    }
+
+    fn get_request_by_id(&mut self, request_id: u64) -> Option<&Request> {
+        for request in self.requests.iter() {
+            if request.request_id == request_id {
+                return Some(request);
+            }
+        }
+        None
+    }
 
     // pub fn commit_by_miner(&mut self, miner: AccountId, request_id: u64, answer: String) {
     //     let miner_to_commit = self.get_register_miner(miner);
@@ -305,11 +310,11 @@ mod tests {
         let miner_1: AccountId = "hassel.near".parse().unwrap();
         let miner_2: AccountId = "edson.near".parse().unwrap();
 
-        let result1 = contract.register_miner(miner_1.clone());
-        let result2 = contract.register_miner(miner_2.clone());
+        let result_1 = contract.register_miner(miner_1.clone());
+        let result_2 = contract.register_miner(miner_2.clone());
 
-        assert_eq!(result1, RegisterMinerResult::Success);
-        assert_eq!(result2, RegisterMinerResult::Success);
+        assert_eq!(result_1, RegisterMinerResult::Success);
+        assert_eq!(result_2, RegisterMinerResult::Success);
 
         assert!(contract.get_register_miner(miner_1).is_some());
         assert!(contract.get_register_miner(miner_2).is_some());
@@ -429,96 +434,62 @@ mod tests {
         assert!(contract.get_register_validator(validator).is_none());
     }
 
-    // #[test]
-    // fn test_get_register_validator() {
-    //     let mut contract = Contract::new();
-    //     let participant_1: AccountId = "anne.near".parse().unwrap();
-    //     let participant_2: AccountId = "bob.near".parse().unwrap();
+    #[test]
+    fn test_request_governance_decision(){
+        let mut contract = Contract::new();
+        let request_id_1 = 100;
+        let request_id_2 = 101;
 
-    //     contract.validators.push(participant_1.clone());
-    //     contract.validators.push(participant_2.clone());
+        let result_1 = contract.request_governance_decision(request_id_1.clone());
+        let result_2 = contract.request_governance_decision(request_id_2.clone());
+        
+        assert_eq!(result_1, RegisterRequestResult::Success);
+        assert_eq!(result_2, RegisterRequestResult::Success);
+        
+        assert!(contract.get_request_by_id(request_id_1).is_some());
+        assert!(contract.get_request_by_id(request_id_2).is_some());
 
-    //     let register_validator = contract.get_register_validator(participant_1.clone());
+        let logs = get_logs();
 
-    //     let validator = match register_validator {
-    //         Some(register) => register,
-    //         None => panic!("Validator not register"),
-    //     };
+        assert_eq!(logs.len(), 2);
 
-    //     assert_eq!(*validator, participant_1);
+        assert_eq!(logs[0], "Registered new request: 100");
+        assert_eq!(logs[1], "Registered new request: 101");
+    }
 
-    //     let register_validator = contract.get_register_validator(participant_2.clone());
+    #[test]
+    fn test_request_governance_decision_when_is_registered_returns_already_registered(){
+        let mut contract = Contract::new();
+        let request_id = 100;
 
-    //     let validator = match register_validator {
-    //         Some(register) => register,
-    //         None => panic!("Validator not register"),
-    //     };
+        contract.request_governance_decision(request_id);
 
-    //     assert_eq!(*validator, participant_2);
-    // }
+        let result = contract.request_governance_decision(request_id);
 
-    // #[test]
-    // fn test_get_request_by_id() {
-    //     let request = Request {
-    //         sender: "anne.near".parse().unwrap(),
-    //         request_id: 100,
-    //         start_time: env::epoch_height(),
-    //         commit_miner_deadline: env::epoch_height() + COMMIT_MINER_DURATION,
-    //         reveal_miner_deadline: env::epoch_height()
-    //             + COMMIT_MINER_DURATION
-    //             + REVEAL_MINER_DURATION,
-    //         commit_validator_deadline: env::epoch_height()
-    //             + COMMIT_MINER_DURATION
-    //             + REVEAL_MINER_DURATION
-    //             + COMMIT_VALIDATOR_DURATION,
-    //         reveal_validator_deadline: env::epoch_height()
-    //             + COMMIT_MINER_DURATION
-    //             + REVEAL_MINER_DURATION
-    //             + COMMIT_VALIDATOR_DURATION
-    //             + REVEAL_VALIDATOR_DURATION,
-    //         miners_proposals: LookupMap::new(b"m"),
-    //         validators_proposals: LookupMap::new(b"v"),
-    //     };
+        assert_eq!(result, RegisterRequestResult::AlreadyRegistered);
 
-    //     let mut contract = Contract::new();
-    //     contract.requests.push(request);
+        let logs = get_logs();
+        assert_eq!(logs.len(), 2);
+        
+        assert_eq!(logs[0], "Registered new request: 100");
+        assert_eq!(logs[1], "Attempted to register an already registered request: 100");
+    }
 
-    //     let register_request = contract.get_request_by_id(100);
+    #[test]
+    fn test_get_request_by_id(){
+        let mut contract = Contract::new();
+        let request_id = 100;
 
-    //     let request = match register_request {
-    //         Some(register) => register,
-    //         None => panic!("request not register"),
-    //     };
+        contract.request_governance_decision(request_id);
+        
+        assert!(contract.get_request_by_id(request_id).is_some());
+    }
 
-    //     assert_eq!(request.request_id, 100);
-    // }
+    #[test]
+    fn test_get_request_by_id_when_not_registered(){
+        let mut contract = Contract::new();
+        let request_id = 100;
 
-    // #[test]
-    // fn test_request_governance_decision() {
-    //     //TODO: verificar si esta prueba es correcto el planteamiento
-    //     let mut contract = Contract::new();
-    //     contract.request_governance_decision(100);
-
-    //     let register_request = contract.get_request_by_id(100);
-
-    //     let request = match register_request {
-    //         Some(register) => register,
-    //         None => panic!("request not register"),
-    //     };
-
-    //     assert_eq!(request.request_id, 100);
-    // }
-
-    //TODO: Como manejo los tiempos "epoch" para que pueda hacer los siguientes Test
-    // #[test]
-    // fn test_commit_by_miner() {}
-
-    // #[test]
-    // fn test_commit_by_validator() {}
-
-    // #[test]
-    // fn test_reveal_by_miner() {}
-
-    // #[test]
-    // fn test_reveal_by_validator() {}
+        assert!(contract.get_request_by_id(request_id).is_none());
+    }
 }
