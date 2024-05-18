@@ -156,32 +156,36 @@ impl Contract {
         None
     }
 
-    // pub fn commit_by_miner(&mut self, miner: AccountId, request_id: u64, answer: String) {
-    //     let miner_to_commit = self.get_register_miner(miner);
-    //     require!(miner_to_commit.is_some());
+    pub fn commit_by_miner(&mut self, miner: AccountId, request_id: u64, answer: String) {
+        
+        if self.get_register_miner(miner.clone()).is_none() {
+            log!("Miner ")
+        }
+        let miner_to_commit = self.get_register_miner(miner);
+        require!(miner_to_commit.is_some());
 
-    //     let request_exist = self.get_request_by_id(request_id);
-    //     require!(request_exist.is_some());
+        let request_exist = self.get_request_by_id(request_id);
+        require!(request_exist.is_some());
 
-    //     let complete_request = match self.get_request_by_id(request_id) {
-    //         Some(request) => request,
-    //         None => panic!("Request not found"),
-    //     };
+        let complete_request = match self.get_request_by_id(request_id) {
+            Some(request) => request,
+            None => panic!("Request not found"),
+        };
 
-    //     require!(
-    //         env::epoch_height() < complete_request.commit_miner_deadline,
-    //         "No time to commit"
-    //     );
+        require!(
+            env::epoch_height() < complete_request.commit_miner_deadline,
+            "No time to commit"
+        );
 
-    //     let proposal = MinerProposal {
-    //         proposal_hash: env::keccak256(answer.as_bytes()),
-    //         is_revealed: false,
-    //     };
+        let proposal = MinerProposal {
+            proposal_hash: env::keccak256(answer.as_bytes()),
+            is_revealed: false,
+        };
 
-    //     complete_request
-    //         .miners_proposals
-    //         .insert(env::predecessor_account_id(), proposal);
-    // }
+        complete_request
+            .miners_proposals
+            .insert(env::predecessor_account_id(), proposal);
+    }
 
     // //TODO: Answer in this method is a vector with the top ten
     // pub fn commit_by_validator(&mut self, validator: AccountId, request_id: u64, answer: String) {
