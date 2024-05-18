@@ -32,7 +32,6 @@ pub struct Request {
     validators_proposals: LookupMap<AccountId, ValidatorProposal>,
 }
 
-/// Main contract structure serialized with Borsh
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
@@ -73,7 +72,8 @@ impl Contract {
         }
     }
 
-    pub fn register_miner(&mut self, new_miner_id: AccountId) -> RegisterMinerResult {
+    pub fn register_miner(&mut self) -> RegisterMinerResult {
+        let new_miner_id = env::predecessor_account_id();
         // @dev Validate the miner is not already registered
         if self.get_register_miner(new_miner_id.clone()).is_some() {
             log!(
@@ -99,7 +99,9 @@ impl Contract {
         None
     }
 
-    pub fn register_validator(&mut self, new_validator_id: AccountId) -> RegisterValidatorResult {
+    pub fn register_validator(&mut self) -> RegisterValidatorResult {
+        let new_validator_id = env::predecessor_account_id();
+
         if self
             .get_register_validator(new_validator_id.clone())
             .is_some()
@@ -119,9 +121,9 @@ impl Contract {
     }
 
     // TODO: remove the miner_id from the function call and use environment variable
-    pub fn get_register_validator(&mut self, miner_id: AccountId) -> Option<&AccountId> {
+    pub fn get_register_validator(&mut self, validator_id: AccountId) -> Option<&AccountId> {
         for validator in self.validators.iter() {
-            if *validator == miner_id {
+            if *validator == validator_id {
                 return Some(validator);
             }
         }
@@ -162,7 +164,6 @@ impl Contract {
         None
     }
 
-<<<<<<< HEAD
     pub fn commit_by_miner(&mut self, miner: AccountId, request_id: u64, answer: String) {
         
         if self.get_register_miner(miner.clone()).is_none() {
@@ -170,13 +171,13 @@ impl Contract {
         }
         let miner_to_commit = self.get_register_miner(miner);
         require!(miner_to_commit.is_some());
-=======
+
     // TODO: use the environment variable to get the account_id
     // TODO: Answer is a bool and a message with the reason.....i.e true, "Yes, because is a good NFT"
     // pub fn commit_by_miner(&mut self, miner: AccountId, request_id: u64, answer: String) {
     //     let miner_to_commit = self.get_register_miner(miner);
     //     require!(miner_to_commit.is_some());
->>>>>>> 0cb9b56d50af1efe99888e17bebd9d7fa3e72cf5
+
 
         let request_exist = self.get_request_by_id(request_id);
         require!(request_exist.is_some());
