@@ -1,8 +1,7 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-//use near_sdk::env::log;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::store::{LookupMap, Vector};
-use near_sdk::{env, log, near_bindgen, require, AccountId, PanicOnDefault};
+use near_sdk::{env, log, near_bindgen, AccountId, PanicOnDefault};
 use hex;
 
 const COMMIT_MINER_DURATION: u64 = 5; // 2 minutes
@@ -72,11 +71,25 @@ pub enum CommitMinerResult {
 
 #[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq)]
 #[serde(crate = "near_sdk::serde")]
+pub enum RevealMinerResult {
+    Success,
+    Fail
+}
+
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq)]
+#[serde(crate = "near_sdk::serde")]
 pub enum CommitValidatorResult {
     Success,
     Fail
 }
 
+
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq)]
+#[serde(crate = "near_sdk::serde")]
+pub enum RevealValidatorResult {
+    Success,
+    Fail
+}
 #[near_bindgen]
 impl Contract {
     #[init]
@@ -182,8 +195,7 @@ impl Contract {
         }
         None
     }
-
-        // @dev Las funciones de commit no regresarian ningun valor o tambien usamos el enum de alreadyregister y success
+    
     pub fn commit_by_miner(&mut self, request_id: String, answer: bool, message: String) -> CommitMinerResult{
    
         let miner =  env::predecessor_account_id();
@@ -270,85 +282,95 @@ impl Contract {
 
     }
 
-    // pub fn reveal_by_miner(&mut self, miner: AccountId, request_id: u64, answer: String) {
-    //     let request_exist = self.get_request_by_id(request_id);
-    //     require!(request_exist.is_some());
+    pub fn reveal_by_miner(&mut self, request_id: String, answer: bool, message : String) -> RevealMinerResult{
+       
+       let miner = env::predecessor_account_id();
 
-    //     let miner_to_reveal = self.get_register_miner(miner.clone());
-    //     require!(miner_to_reveal.is_some());
+       if self.get_register_miner(miner.clone()).is_none() {
+           log!("Miner is not register: {}", miner);
+           return RevealMinerResult::Fail;
+       }
 
-    //     let complete_request = match self.get_request_by_id(request_id) {
-    //         Some(request) => request,
-    //         None => panic!("Request not found"),
-    //     };
+       if self.get_request_by_id(request_id.clone()).is_none(){
+           log!("Request is not register: {}", request_id);
+           return RevealMinerResult::Fail;
+       }
 
-    //     require!(
-    //         env::epoch_height() > complete_request.commit_miner_deadline,
-    //         "commit time"
-    //     );
-    //     require!(
-    //         env::epoch_height() < complete_request.reveal_miner_deadline,
-    //         "No time to reveal"
-    //     );
+       let complete_request = match self.get_request_by_id(request_id) {
+           Some(request) => request,
+           None => panic!("Request not found"),
+       };
 
-    //     let save_proposal = match complete_request.miners_proposals.get_mut(&miner) {
-    //         Some(proposal) => proposal,
-    //         None => panic!("proposal not found"),
-    //     };
+       let save_proposal = match complete_request.miners_proposals.get_mut(&miner) {
+           Some(proposal) => proposal,
+           None => panic!("proposal not found"),
+       };
 
-    //     require!(
-    //         save_proposal.is_revealed == false,
-    //         "Proposal already reveal"
-    //     );
+       if save_proposal.is_revealed == true {
+           log!("Proposal already reveal");
+           return RevealMinerResult::Fail;
+       }
 
-    //     let answer_to_verify = env::keccak256(answer.as_bytes());
-    //     require!(
-    //         save_proposal.proposal_hash == answer_to_verify,
-    //         "Answer don't match"
-    //     );
+       let concatenated_answer = format!("{}{}", answer, message);
+       let answer_to_verify = env::keccak256(concatenated_answer.as_bytes());
+        
+       if save_proposal.proposal_hash != answer_to_verify{
+           log!("Answer don't match");
+           return RevealMinerResult::Fail;
+       }
+            
+       save_proposal.is_revealed = true;
+       return RevealMinerResult::Success;
 
-    //     save_proposal.is_revealed = true;
-    // }
+    }
 
-    // pub fn reveal_by_validator(&mut self, validator: AccountId, request_id: u64, answer: String) {
-    //     let request_exist = self.get_request_by_id(request_id);
-    //     require!(request_exist.is_some());
+    pub fn reveal_by_validator(&mut self, request_id: String, answer: Vec<String>, message : String) -> RevealValidatorResult{
+       
+       let validator = env::predecessor_account_id();
 
-    //     let validator_to_reveal = self.get_register_miner(validator.clone());
-    //     require!(validator_to_reveal.is_some());
+       if self.get_register_validator(validator.clone()).is_none(){
+           log!("Validator is not register: {}", validator);
+           return RevealValidatorResult::Fail;
+       } 
 
-    //     let complete_request = match self.get_request_by_id(request_id) {
-    //         Some(request) => request,
-    //         None => panic!("Request not found"),
-    //     };
+       if self.get_request_by_id(request_id.clone()).is_none() {
+           log!("Request is not register: {}", request_id);
+           return RevealValidatorResult::Fail;
+       }
 
-    //     require!(
-    //         env::epoch_height() > complete_request.commit_validator_deadline,
-    //         "commit time"
-    //     );
-    //     require!(
-    //         env::epoch_height() < complete_request.reveal_validator_deadline,
-    //         "No time to reveal"
-    //     );
+       let complete_request = match self.get_request_by_id(request_id) {
+           Some(request) => request,
+           None => panic!("Request not found"),
+       };
 
-    //     let save_proposal = match complete_request.validators_proposals.get_mut(&validator) {
-    //         Some(proposal) => proposal,
-    //         None => panic!("proposal not found"),
-    //     };
+        let save_proposal = match complete_request.validators_proposals.get_mut(&validator) {
+            Some(proposal) => proposal,
+            None => panic!("proposal not found"),
+        };
 
-    //     require!(
-    //         save_proposal.is_revealed == false,
-    //         "Proposal already reveal"
-    //     );
+        if save_proposal.is_revealed == true {
+            log!("Proposal already reveal");
+            return RevealValidatorResult::Fail;
+        }
 
-    //     let answer_to_verify = env::keccak256(answer.as_bytes());
-    //     require!(
-    //         save_proposal.proposal_hash == answer_to_verify,
-    //         "Answer don't match"
-    //     );
+        if answer.len() != 10 {
+            log!("Vote for 10 miners");
+            return RevealValidatorResult::Fail;
+        }
 
-    //     save_proposal.is_revealed = true;
-    // }
+        let mut concatenated_answer = answer.join(" ");
+        concatenated_answer.push_str(&message);
+        let answer_to_verify = env::keccak256(concatenated_answer.as_bytes());
+
+        if save_proposal.proposal_hash != answer_to_verify {
+            log!("Answer don't match");
+            return RevealValidatorResult::Fail;
+        }
+            
+        save_proposal.is_revealed = true;
+        return RevealValidatorResult::Success;
+
+    }
 }
 
 #[cfg(test)]
@@ -879,8 +901,361 @@ mod tests {
         assert_eq!(logs[0], "Registered new validator: hassel.near");
         assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
         assert_eq!(logs[2], "Vote for 10 miners");
+
+    }
+
+    // Reveal by miner
+
+    #[test]
+    fn test_reveal_by_miner () {
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        contract.register_miner();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+        
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer = true;
+        let message = "It's a cool NFT".to_string();
+
+        contract.commit_by_miner(request_id.clone(), answer, message.clone());
+
+        let result = contract.reveal_by_miner(request_id, answer, message);
+
+        assert_eq!(result, RevealMinerResult::Success);
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 3);
+
+        assert_eq!(logs[0], "Registered new miner: hassel.near");
+        assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+        assert_eq!(logs[2], "Miner proposal register successfully");
+
+    }
+
+    #[test]
+    fn test_reveal_by_miner_when_miner_is_not_registered(){
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        contract.register_miner();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+        
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer = true;
+        let message = "It's a cool NFT".to_string();
+
+        contract.commit_by_miner(request_id.clone(), answer, message.clone());
+
+        let context = get_context("edson.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let result = contract.reveal_by_miner(request_id, answer, message);
+
+        assert_eq!(result, RevealMinerResult::Fail);
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 1);
+
+        assert_eq!(logs[0], "Miner is not register: edson.near");
+
+    }
+
+    #[test]
+    fn test_reveal_by_miner_when_request_is_not_registered() {
+
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        contract.register_miner();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+        
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer = true;
+        let message = "It's a cool NFT".to_string();
+
+        contract.commit_by_miner(request_id.clone(), answer, message.clone());
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725".to_string();
+        let result = contract.reveal_by_miner(request_id, answer, message);
+
+        assert_eq!(result, RevealMinerResult::Fail);
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 4);
+
+        assert_eq!(logs[0], "Registered new miner: hassel.near");
+        assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+        assert_eq!(logs[2], "Miner proposal register successfully");
+        assert_eq!(logs[3], "Request is not register: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725");
+
+    }
+
+    #[test]
+    fn test_reveal_by_miner_when_proposal_is_already_reveal(){
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        contract.register_miner();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+        
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer = true;
+        let message = "It's a cool NFT".to_string();
+
+        contract.commit_by_miner(request_id.clone(), answer, message.clone());
+        contract.reveal_by_miner(request_id.clone(), answer, message.clone());
+
+        let result = contract.reveal_by_miner(request_id, answer, message);
+
+        assert_eq!(result, RevealMinerResult::Fail);
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 4);
+
+        assert_eq!(logs[0], "Registered new miner: hassel.near");
+        assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+        assert_eq!(logs[2], "Miner proposal register successfully");
+        assert_eq!(logs[3], "Proposal already reveal");
+
+    }
+
+    #[test]
+    fn test_reveal_by_miner_when_answer_not_equal() {
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        contract.register_miner();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+        
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer = true;
+        let message = "It's a cool NFT".to_string();
+
+        contract.commit_by_miner(request_id.clone(), answer, message.clone());
+       
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer = false;
+        let message = "It's a cool NFT".to_string();
+    
+        let result = contract.reveal_by_miner(request_id, answer, message);
+
+        assert_eq!(result, RevealMinerResult::Fail);
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 4);
+
+        assert_eq!(logs[0], "Registered new miner: hassel.near");
+        assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+        assert_eq!(logs[2], "Miner proposal register successfully");
+        assert_eq!(logs[3], "Answer don't match");
         
 
+    }
+
+    // Reveal by validator 
+
+    #[test]
+    fn test_reveal_by_validator() {
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        contract.register_validator();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+        
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer:Vec<String> = vec!["hassel.near".to_string(), "edson.near".to_string(), "anne.near".to_string(), "bob.near".to_string(), 
+        "alice.near".to_string(), "john.near".to_string(), "harry.near".to_string(), "scott.near".to_string(), 
+        "felix.near".to_string(), "aurora.near".to_string()];
+
+        let message = "It's a cool NFT".to_string();
+
+        contract.commit_by_validator(request_id.clone(), answer.clone(), message.clone());
+
+        let result = contract.reveal_by_validator(request_id, answer, message);
+
+        assert_eq!(result, RevealValidatorResult::Success);
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 3);
+
+        assert_eq!(logs[0], "Registered new validator: hassel.near");
+        assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+        assert_eq!(logs[2], "Validator proposal register successfully");
+
+    }
+
+    #[test]
+    fn test_reveal_by_validator_when_validator_is_not_registered(){
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        contract.register_validator();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+        
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer:Vec<String> = vec!["hassel.near".to_string(), "edson.near".to_string(), "anne.near".to_string(), "bob.near".to_string(), 
+        "alice.near".to_string(), "john.near".to_string(), "harry.near".to_string(), "scott.near".to_string(), 
+        "felix.near".to_string(), "aurora.near".to_string()];
+
+        let message = "It's a cool NFT".to_string();
+
+        contract.commit_by_validator(request_id.clone(), answer.clone(), message.clone());
+
+        let context = get_context("edson.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let result = contract.reveal_by_validator(request_id, answer, message);
+
+        assert_eq!(result, RevealValidatorResult::Fail);
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 1);
+
+        assert_eq!(logs[0], "Validator is not register: edson.near");
+
+    }
+
+    #[test]
+    fn test_reveal_by_validator_when_request_is_not_registered() {
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        contract.register_validator();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+        
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer:Vec<String> = vec!["hassel.near".to_string(), "edson.near".to_string(), "anne.near".to_string(), "bob.near".to_string(), 
+        "alice.near".to_string(), "john.near".to_string(), "harry.near".to_string(), "scott.near".to_string(), 
+        "felix.near".to_string(), "aurora.near".to_string()];
+
+        let message = "It's a cool NFT".to_string();
+
+        contract.commit_by_validator(request_id.clone(), answer.clone(), message.clone());
+
+        
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725".to_string();
+        let result = contract.reveal_by_validator(request_id, answer, message);
+
+        assert_eq!(result, RevealValidatorResult::Fail);
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 4);
+
+        assert_eq!(logs[0], "Registered new validator: hassel.near");
+        assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+        assert_eq!(logs[2], "Validator proposal register successfully");
+        assert_eq!(logs[3], "Request is not register: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725");
+    }
+
+    #[test]
+    fn test_reveal_by_validator_when_proposal_is_already_reveal() {
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        contract.register_validator();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+        
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer:Vec<String> = vec!["hassel.near".to_string(), "edson.near".to_string(), "anne.near".to_string(), "bob.near".to_string(), 
+        "alice.near".to_string(), "john.near".to_string(), "harry.near".to_string(), "scott.near".to_string(), 
+        "felix.near".to_string(), "aurora.near".to_string()];
+
+        let message = "It's a cool NFT".to_string();
+
+        contract.commit_by_validator(request_id.clone(), answer.clone(), message.clone());
+        contract.reveal_by_validator(request_id.clone(), answer.clone(), message.clone());
+        
+        let result = contract.reveal_by_validator(request_id, answer, message);
+
+        assert_eq!(result, RevealValidatorResult::Fail);
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 4);
+
+        assert_eq!(logs[0], "Registered new validator: hassel.near");
+        assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+        assert_eq!(logs[2], "Validator proposal register successfully");
+        assert_eq!(logs[3], "Proposal already reveal");
+
+    }
+
+    #[test]
+    fn test_reveal_by_validator_when_answer_not_equal() {
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        contract.register_validator();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+        
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer:Vec<String> = vec!["hassel.near".to_string(), "edson.near".to_string(), "anne.near".to_string(), "bob.near".to_string(), 
+        "alice.near".to_string(), "john.near".to_string(), "harry.near".to_string(), "scott.near".to_string(), 
+        "felix.near".to_string(), "aurora.near".to_string()];
+
+        let message = "It's a cool NFT".to_string();
+
+        contract.commit_by_validator(request_id.clone(), answer.clone(), message.clone());
+        
+        
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer:Vec<String> = vec!["hassel.near".to_string(), "edson.near".to_string(), "anne.near".to_string(), "bob.near".to_string(), 
+        "alice.near".to_string(), "john.near".to_string(), "harry.near".to_string(), "scott.near".to_string(), 
+        "felix.near".to_string(), "Anita.near".to_string()];
+
+        let message = "It's a cool NFT".to_string();
+        
+        
+        let result = contract.reveal_by_validator(request_id.clone(), answer.clone(), message.clone());
+        
+        assert_eq!(result, RevealValidatorResult::Fail);
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 4);
+
+        assert_eq!(logs[0], "Registered new validator: hassel.near");
+        assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+        assert_eq!(logs[2], "Validator proposal register successfully");
+        assert_eq!(logs[3], "Answer don't match");
 
     }
 }
