@@ -70,6 +70,13 @@ pub enum CommitMinerResult {
     Fail
 }
 
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq)]
+#[serde(crate = "near_sdk::serde")]
+pub enum CommitValidatorResult {
+    Success,
+    Fail
+}
+
 #[near_bindgen]
 impl Contract {
     #[init]
@@ -216,16 +223,18 @@ impl Contract {
         return CommitMinerResult::Success;
     }
 
-    pub fn commit_by_validator(&mut self, request_id: String, answer: Vec<String>, message : String) {
+    pub fn commit_by_validator(&mut self, request_id: String, answer: Vec<String>, message : String) -> CommitValidatorResult{
         
         let validator = env::predecessor_account_id();
 
         if self.get_register_validator(validator.clone()).is_none() {
             log!("Validator is not register: {}", validator);
+            return CommitValidatorResult::Fail;
         }        
 
         if self.get_request_by_id(request_id.clone()).is_none(){
             log!("Request is not register: {}", request_id);
+            return CommitValidatorResult::Fail;
         }
 
         let complete_request:&mut Request = match self.get_request_by_id(request_id) {
@@ -234,10 +243,14 @@ impl Contract {
         };
 
         if complete_request.validators_proposals.get(&validator).is_some() {
-            log!("This validator have a commit answer {}:", validator);
+            log!("This validator have a commit answer: {}", validator);
+            return CommitValidatorResult::Fail;
         }
 
-        require!(answer.len() == 10, "Choose your top ten");
+        if answer.len() != 10 {
+            log!("Vote for 10 miners");
+            return CommitValidatorResult::Fail;
+        }
 
         let mut concatenated_answer = answer.join(" ");
         concatenated_answer.push_str(&message);
@@ -251,6 +264,10 @@ impl Contract {
         complete_request
             .validators_proposals
             .insert(validator, proposal);
+
+        log!("Validator proposal register successfully");
+        return CommitValidatorResult::Success;
+
     }
 
     // pub fn reveal_by_miner(&mut self, miner: AccountId, request_id: u64, answer: String) {
@@ -374,7 +391,6 @@ mod tests {
         let miner_2: AccountId = "edson.near".parse().unwrap();
         assert!(contract.get_register_miner(miner_2).is_some());
 
-        // Assert logs
         let logs = get_logs();
         assert_eq!(logs.len(), 1);
         assert_eq!(logs[0], "Registered new miner: edson.near");
@@ -486,7 +502,6 @@ mod tests {
         );
     }
     
-
     #[test]
     fn test_get_register_validator() {
 
@@ -572,6 +587,7 @@ mod tests {
     }
 
     // Request by id
+
     #[test]
     fn test_get_request_by_id() {
         
@@ -710,11 +726,161 @@ mod tests {
 
         let logs = get_logs();
         assert_eq!(logs.len(), 1);
-
-
         assert_eq!(logs[0], "This miner have a commit answer: hassel.near");
       
     }
 
+    // Commit by validator
 
+    #[test]
+    fn test_commit_by_validator_when_validator_and_request_exist(){
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        contract.register_validator();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer:Vec<String> = vec!["hassel.near".to_string(), "edson.near".to_string(), "anne.near".to_string(), "bob.near".to_string(), 
+        "alice.near".to_string(), "john.near".to_string(), "harry.near".to_string(), "scott.near".to_string(), 
+        "felix.near".to_string(), "jane.near".to_string()];
+
+        let message = "It's a cool NFT".to_string();
+
+        let result = contract.commit_by_validator(request_id, answer, message);
+
+        assert_eq!(result,CommitValidatorResult::Success);
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 3);
+        assert_eq!(logs[0], "Registered new validator: hassel.near");
+        assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+        assert_eq!(logs[2], "Validator proposal register successfully");
+
+    }
+
+    #[test]
+    fn test_commit_by_validator_when_validator_dont_registered_and_request_exist(){
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        contract.register_validator();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+
+        let context = get_context("edson.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer:Vec<String> = vec!["hassel.near".to_string(), "edson.near".to_string(), "anne.near".to_string(), "bob.near".to_string(), 
+        "alice.near".to_string(), "john.near".to_string(), "harry.near".to_string(), "scott.near".to_string(), 
+        "felix.near".to_string(), "jane.near".to_string()];
+
+        let message = "It's a cool NFT".to_string();
+
+
+        let result = contract.commit_by_validator(request_id, answer, message);
+
+        assert_eq!(result,CommitValidatorResult::Fail);
+        
+        let logs = get_logs();
+        assert_eq!(logs.len(), 1);
+        assert_eq!(logs[0], "Validator is not register: edson.near");
+    }
+
+    #[test]
+    fn test_commit_by_validator_when_validator_registered_and_request_dont_exist(){
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        contract.register_validator();
+
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer:Vec<String> = vec!["hassel.near".to_string(), "edson.near".to_string(), "anne.near".to_string(), "bob.near".to_string(), 
+        "alice.near".to_string(), "john.near".to_string(), "harry.near".to_string(), "scott.near".to_string(), 
+        "felix.near".to_string(), "jane.near".to_string()];
+
+        let message = "It's a cool NFT".to_string();
+        let result = contract.commit_by_validator(request_id, answer, message);
+
+        assert_eq!(result,CommitValidatorResult::Fail);
+        
+        let logs = get_logs();
+        assert_eq!(logs.len(), 2);
+        assert_eq!(logs[0], "Registered new validator: hassel.near");
+        assert_eq!(logs[1], "Request is not register: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726")
+    }
+
+    #[test]
+    fn test_commit_by_validator_when_miner_and_request_exist_and_commit_already(){
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+        
+        contract.register_validator();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer:Vec<String> = vec!["hassel.near".to_string(), "edson.near".to_string(), "anne.near".to_string(), "bob.near".to_string(), 
+        "alice.near".to_string(), "john.near".to_string(), "harry.near".to_string(), "scott.near".to_string(), 
+        "felix.near".to_string(), "jane.near".to_string()];
+        let message = "It's a cool NFT".to_string();
+        contract.commit_by_validator(request_id.clone(), answer.clone(), message.clone());
+
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let result = contract.commit_by_validator(request_id, answer, message);
+
+        assert_eq!(result,CommitValidatorResult::Fail);
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 1);
+        assert_eq!(logs[0], "This validator have a commit answer: hassel.near");
+    }
+
+    #[test]
+    fn test_commit_by_validator_when_answer_is_not_complete() {
+        let context = get_context("hassel.near".parse().unwrap());
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        contract.register_validator();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+        let answer:Vec<String> = vec!["hassel.near".to_string(), "edson.near".to_string(), "anne.near".to_string(), "bob.near".to_string(), 
+        "alice.near".to_string(), "john.near".to_string(), "harry.near".to_string(), "scott.near".to_string(), 
+        "felix.near".to_string()];
+
+        let message = "It's a cool NFT".to_string();
+
+        let result = contract.commit_by_validator(request_id, answer, message);
+
+        assert_eq!(result,CommitValidatorResult::Fail);
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 3);
+        assert_eq!(logs[0], "Registered new validator: hassel.near");
+        assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+        assert_eq!(logs[2], "Vote for 10 miners");
+        
+
+
+    }
 }
