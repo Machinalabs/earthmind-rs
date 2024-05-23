@@ -1,23 +1,3 @@
-HELPER function to hash your value 
-
-Miner use a bool and a message 
-let concatenated_answer = format!("{}{}", answer, message);
-
-let answer = true;
-        let message = "It's a cool NFT".to_string();
-
-
-Validator is a vector and a message 
-answer: Vec<AccountId>, message: String
-
-if answer.len() != 10 {
-            log!("Vote for 10 miners");
-            return CommitValidatorResult::Fail;
-        }
-let mut concatenated_answer: Vec<u8> = answer.iter().flat_map(|id| id.as_bytes()).copied().collect();
-        concatenated_answer.extend_from_slice(message.as_bytes());
-
-
 # EarthMind RS
 
 
