@@ -1,24 +1,37 @@
 # EarthMind RS
 
-
-
+Earthmind allows any protocol to delegate their governance decision to the Earthmind Newtwork 
 
 
 ## Pre Requisites
 
-- [Just]
-- [Rust]
-- [Near]
-- [`cargo-near`]
+- rust:
+```
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+- Near CLI RS
+```
+cargo install near-cli-rs
+```
+
+- cargo-near
+```
+cargo install cargo-near
+```
+
+- Near workspaces
+```
+cargo add near-workspaces
+```
 
 ## Getting Started
 
 ```bash
-$ git clone https://github.com/hasselalcala/consensus_contract.git
+$ git clone https://github.com/Machinalabs/earthmind-rs.git
 
-$ just test  # run tests
+$ cargo test  # run tests
 
-$ just build # build project locally
+$ cargo build # build project locally
 ```
 
 ## Deployment
@@ -34,10 +47,7 @@ cargo near deploy <account-id>
 ```
 
 ## Useful Links
-
-- [Just]
-- [Rust]
-- [Near]
+- [Rust](https://www.rust-lang.org/learn) - Documentation
 - [cargo-near](https://github.com/near/cargo-near) - NEAR smart contract development toolkit for Rust
 - [near CLI](https://docs.near.org/tools/near-cli) - Interact with NEAR blockchain from command line
 - [NEAR Rust SDK Documentation](https://docs.near.org/sdk/rust/introduction)
