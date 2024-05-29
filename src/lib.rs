@@ -1,12 +1,17 @@
 pub mod models;
 use crate::models::models::*;
-
-type Hash = String;
-
 use hex;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::store::{LookupMap, Vector};
 use near_sdk::{env, log, near_bindgen, require, AccountId, PanicOnDefault};
+
+type Hash = String;
+
+const COMMIT_MINER_DURATION: u64 = 2 * 60 * 1_000_000_000; // 2 minutes in nanoseconds
+const REVEAL_MINER_DURATION: u64 = 2 * 60 * 1_000_000_000; // 2 minutes in nanoseconds
+const COMMIT_VALIDATOR_DURATION: u64 = 2 * 60 * 1_000_000_000; // 2 minutes in nanoseconds
+const REVEAL_VALIDATOR_DURATION: u64 = 2 * 60 * 1_000_000_000; // 2 minutes in nanoseconds
+const SETTLEMENT_PERIOD: u64 = 10 * 60 * 1_000_000_000; // 10 minutes in nanoseconds
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -101,7 +106,7 @@ impl Contract {
         let new_request = Request {
             sender: env::predecessor_account_id(),
             request_id: new_request_id_hex.clone(),
-            start_time: env::epoch_height(),
+            start_time: env::block_timestamp(),
             miners_proposals: LookupMap::new(b"m"),
             validators_proposals: LookupMap::new(b"v"),
         };
@@ -121,6 +126,26 @@ impl Contract {
         None
     }
 
+    fn get_epoch_stage(start_time : u64) -> RequestState {
+
+        let elapsed = env::block_timestamp() - start_time;
+        
+        if start_time == 0 {
+            RequestState::NonStarted
+        } else if elapsed < COMMIT_MINER_DURATION {
+            RequestState::CommitMiners
+        } else if elapsed < COMMIT_MINER_DURATION + REVEAL_MINER_DURATION {
+            RequestState::RevealMiners
+        } else if elapsed < COMMIT_MINER_DURATION + REVEAL_MINER_DURATION + COMMIT_VALIDATOR_DURATION {
+            RequestState::CommitValidators
+        } else if elapsed < COMMIT_MINER_DURATION + REVEAL_MINER_DURATION + COMMIT_VALIDATOR_DURATION + REVEAL_VALIDATOR_DURATION {
+            RequestState::RevealValidators
+        } else {
+            RequestState::Ended
+        }
+    }
+
+
     pub fn hash_miner_answer(self, request_id: String, answer: bool, message: String) -> Hash {
         let miner = env::predecessor_account_id();
 
@@ -131,12 +156,12 @@ impl Contract {
         return hash_answer;
     }
 
-    pub fn commit_by_miner( &mut self, request_id: String, answer : Hash) -> CommitMinerResult {
+    pub fn commit_by_miner(&mut self, request_id: String, answer : Hash) -> CommitMinerResult {
 
         let miner = env::predecessor_account_id();
 
         if self.get_register_miner(miner.clone()).is_none() {
-            log!("Miner is not registered: {}", miner);
+            log!("Miner not registered: {}", miner);
             return CommitMinerResult::Fail;
         }
 
@@ -145,10 +170,12 @@ impl Contract {
             return CommitMinerResult::Fail;
         }
 
-        let complete_request: &mut Request = match self.get_request_by_id(request_id) {
+        let complete_request: &mut Request = match self.get_request_by_id(request_id.clone()) {
             Some(request) => request,
             None => panic!("Request not found"),
         };
+
+         assert_eq!(Self::get_epoch_stage(complete_request.start_time), RequestState::CommitMiners, "Not at CommitMiners stage");
 
         if complete_request.miners_proposals.get(&miner).is_some() {
             log!("This miner have a commit answer: {}", miner);
@@ -206,6 +233,8 @@ impl Contract {
             None => panic!("Request not found"),
         };
 
+        assert_eq!(Self::get_epoch_stage(complete_request.start_time), RequestState::CommitValidators, "Not at CommitValidator stage");
+
         if complete_request
             .validators_proposals
             .get(&validator)
@@ -234,7 +263,7 @@ impl Contract {
         let miner = env::predecessor_account_id();
 
         if self.get_register_miner(miner.clone()).is_none() {
-            log!("Miner is not registered: {}", miner);
+            log!("Miner not registered: {}", miner);
             return RevealMinerResult::Fail;
         }
 
@@ -247,6 +276,8 @@ impl Contract {
             Some(request) => request,
             None => panic!("Request not found"),
         };
+
+        assert_eq!(Self::get_epoch_stage(complete_request.start_time), RequestState::RevealMiners, "Not at RevealMiners stage");
 
         let save_proposal = match complete_request.miners_proposals.get_mut(&miner) {
             Some(proposal) => proposal,
@@ -289,6 +320,9 @@ impl Contract {
             Some(request) => request,
             None => panic!("Request not found"),
         };
+
+        assert_eq!(Self::get_epoch_stage(complete_request.start_time), RequestState::RevealValidators, "Not at RevealValidators stage");
+
 
         let save_proposal = match complete_request.validators_proposals.get_mut(&validator) {
             Some(proposal) => proposal,
