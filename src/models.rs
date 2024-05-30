@@ -5,11 +5,6 @@ pub mod models {
     use near_sdk::store::LookupMap;
     use near_sdk::AccountId;
 
-    //const COMMIT_MINER_DURATION: u64 = 5; // 2 minutes
-    //const REVEAL_MINER_DURATION: u64 = 1; // 2 minutes
-    //const COMMIT_VALIDATOR_DURATION: u64 = 5; // 2 minutes
-    //const REVEAL_VALIDATOR_DURATION: u64 = 1; // 2 minutes
-
     type Hash = String;
 
     #[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq)]
@@ -61,12 +56,25 @@ pub mod models {
         Fail,
     }
 
+    
+
     #[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug, Clone)]
     #[serde(crate = "near_sdk::serde")]
     pub struct MinerProposal {
         pub proposal_hash: Hash,
         pub answer : bool,
         pub is_revealed: bool,
+    }
+
+    #[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug, Clone, PartialEq)]
+    #[serde(crate = "near_sdk::serde")]
+    pub enum RequestState {
+        NonStarted,
+        CommitMiners,
+        RevealMiners,
+        CommitValidators,
+        RevealValidators,
+        Ended,
     }
 
     #[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug)]
