@@ -5,3 +5,7 @@ test:
 build:
     echo "Building"
     cargo near build
+
+clippy:
+    echo "Running clippy"
+    cargo clippy --all-targets --all-features -- -D warnings

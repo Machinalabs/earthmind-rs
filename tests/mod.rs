@@ -1,5 +1,5 @@
 extern crate earthmind_rs;
-use earthmind_rs::models::models::{
+use earthmind_rs::models::earthmind_models::{
     CommitMinerResult, CommitValidatorResult, RegisterMinerResult, RegisterRequestResult,
     RegisterValidatorResult, RevealMinerResult, RevealValidatorResult,
 };
@@ -23,7 +23,7 @@ fn generate_validator_answer() -> Vec<AccountId> {
         "felix.near".parse().unwrap(),
         "margaret.near".parse().unwrap(),
     ];
-    return value;
+    value
 }
 
 fn get_context(predecessor_account_id: AccountId, block_timestamp: u64) -> VMContextBuilder {
@@ -165,7 +165,7 @@ fn test_register_validator_when_is_registered_returns_already_registered() {
     assert_eq!(logs[0], "Registered new validator: hassel.near");
     assert_eq!(
         logs[1],
-        "Attempted to register an already registered validator: hassel.near asd"
+        "Attempted to register an already registered validator: hassel.near"
     );
 }
 

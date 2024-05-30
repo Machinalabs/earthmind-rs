@@ -1,4 +1,4 @@
-pub mod models {
+pub mod earthmind_models {
 
     use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
     use near_sdk::serde::{Deserialize, Serialize};
@@ -55,8 +55,6 @@ pub mod models {
         Success,
         Fail,
     }
-
-    
 
     #[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug, Clone)]
     #[serde(crate = "near_sdk::serde")]
