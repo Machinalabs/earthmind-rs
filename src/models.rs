@@ -62,7 +62,7 @@ pub mod models {
     #[serde(crate = "near_sdk::serde")]
     pub struct MinerProposal {
         pub proposal_hash: Hash,
-        pub answer : bool,
+        pub answer: bool,
         pub is_revealed: bool,
     }
 
@@ -93,5 +93,4 @@ pub mod models {
         pub miners_proposals: LookupMap<AccountId, MinerProposal>,
         pub validators_proposals: LookupMap<AccountId, ValidatorProposal>,
     }
-
 }
