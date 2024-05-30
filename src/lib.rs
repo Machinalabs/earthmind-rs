@@ -6,12 +6,11 @@ use near_sdk::store::{LookupMap, Vector};
 use near_sdk::{env, log, near_bindgen, require, AccountId, PanicOnDefault};
 
 type Hash = String;
-
-const COMMIT_MINER_DURATION: u64 = 2 * 60 * 1_000_000_000; // 2 minutes in nanoseconds
-const REVEAL_MINER_DURATION: u64 = 2 * 60 * 1_000_000_000; // 2 minutes in nanoseconds
-const COMMIT_VALIDATOR_DURATION: u64 = 2 * 60 * 1_000_000_000; // 2 minutes in nanoseconds
-const REVEAL_VALIDATOR_DURATION: u64 = 2 * 60 * 1_000_000_000; // 2 minutes in nanoseconds
-const SETTLEMENT_PERIOD: u64 = 10 * 60 * 1_000_000_000; // 10 minutes in nanoseconds
+const two_minutes : u64 = 2 * 60 * 1_000_000_000; 
+const COMMIT_MINER_DURATION: u64 = two_minutes; // 2 minutes in nanoseconds
+const REVEAL_MINER_DURATION: u64 = two_minutes; // 2 minutes in nanoseconds
+const COMMIT_VALIDATOR_DURATION: u64 = two_minutes; // 2 minutes in nanoseconds
+const REVEAL_VALIDATOR_DURATION: u64 = two_minutes; // 2 minutes in nanoseconds
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -126,7 +125,7 @@ impl Contract {
         None
     }
 
-    fn get_epoch_stage(start_time : u64) -> RequestState {
+    fn get_stage(start_time : u64) -> RequestState {
 
         let elapsed = env::block_timestamp() - start_time;
         
@@ -175,7 +174,7 @@ impl Contract {
             None => panic!("Request not found"),
         };
 
-         assert_eq!(Self::get_epoch_stage(complete_request.start_time), RequestState::CommitMiners, "Not at CommitMiners stage");
+         assert_eq!(Self::get_stage(complete_request.start_time), RequestState::CommitMiners, "Not at CommitMiners stage");
 
         if complete_request.miners_proposals.get(&miner).is_some() {
             log!("This miner have a commit answer: {}", miner);
@@ -233,7 +232,7 @@ impl Contract {
             None => panic!("Request not found"),
         };
 
-        assert_eq!(Self::get_epoch_stage(complete_request.start_time), RequestState::CommitValidators, "Not at CommitValidator stage");
+        assert_eq!(Self::get_stage(complete_request.start_time), RequestState::CommitValidators, "Not at CommitValidator stage");
 
         if complete_request
             .validators_proposals
@@ -277,7 +276,7 @@ impl Contract {
             None => panic!("Request not found"),
         };
 
-        assert_eq!(Self::get_epoch_stage(complete_request.start_time), RequestState::RevealMiners, "Not at RevealMiners stage");
+        assert_eq!(Self::get_stage(complete_request.start_time), RequestState::RevealMiners, "Not at RevealMiners stage");
 
         let save_proposal = match complete_request.miners_proposals.get_mut(&miner) {
             Some(proposal) => proposal,
@@ -321,7 +320,7 @@ impl Contract {
             None => panic!("Request not found"),
         };
 
-        assert_eq!(Self::get_epoch_stage(complete_request.start_time), RequestState::RevealValidators, "Not at RevealValidators stage");
+        assert_eq!(Self::get_stage(complete_request.start_time), RequestState::RevealValidators, "Not at RevealValidators stage");
 
 
         let save_proposal = match complete_request.validators_proposals.get_mut(&validator) {

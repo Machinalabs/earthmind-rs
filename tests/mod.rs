@@ -1,5 +1,4 @@
 extern crate earthmind_rs;
-use earthmind_rs::models::models::Request;
 use earthmind_rs::models::models::{
     CommitMinerResult, CommitValidatorResult, RegisterMinerResult, RegisterRequestResult,
     RegisterValidatorResult, RevealMinerResult, RevealValidatorResult,
@@ -10,7 +9,7 @@ use near_sdk::{
     test_utils::{get_logs, VMContextBuilder},
     testing_env, AccountId,
 };
-use near_workspaces::result;
+
 
 fn generate_validator_answer() -> Vec<AccountId> {
     let value = vec![
