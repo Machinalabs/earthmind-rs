@@ -346,7 +346,8 @@ fn test_hash_validator_answer_when_answer_is_not_complete() {
     let answer = generate_validator_answer();
     let answer: Vec<AccountId> = answer[0..answer.len() - 1].to_vec();
     let message = "It's a cool NFT".to_string();
-    contract.hash_validator_answer(request_id, answer.clone(), message);
+
+    contract.hash_validator_answer(request_id, answer, message);
 }
 
 // Commit by miner
@@ -596,7 +597,7 @@ fn test_reveal_by_miner() {
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
     let answer = "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464".to_string();
 
-    contract.commit_by_miner(request_id.clone(), answer);
+    contract.commit_by_miner(request_id, answer);
 
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
     let answer = true;
@@ -638,7 +639,7 @@ fn test_reveal_by_miner_when_miner_is_not_registered() {
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
     let answer = "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464".to_string();
 
-    contract.commit_by_miner(request_id.clone(), answer);
+    contract.commit_by_miner(request_id, answer);
 
     let context = get_context("edson.near".parse().unwrap(), 100000000);
     testing_env!(context.build());
@@ -672,7 +673,7 @@ fn test_reveal_by_miner_when_request_is_not_registered() {
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
     let answer = "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464".to_string();
 
-    contract.commit_by_miner(request_id.clone(), answer);
+    contract.commit_by_miner(request_id, answer);
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725".to_string();
 
     let answer = true;
@@ -847,7 +848,7 @@ fn test_reveal_by_validator_when_validator_is_not_registered() {
     let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
     testing_env!(context.build());
 
-    contract.commit_by_validator(request_id.clone(), answer.clone());
+    contract.commit_by_validator(request_id.clone(), answer);
 
     let context = get_context("edson.near".parse().unwrap(), 100000000);
     testing_env!(context.build());
@@ -892,7 +893,7 @@ fn test_reveal_by_validator_when_request_is_not_registered() {
     let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
     testing_env!(context.build());
 
-    contract.commit_by_validator(request_id.clone(), answer.clone());
+    contract.commit_by_validator(request_id, answer);
 
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725".to_string();
     let answer: Vec<AccountId> = generate_validator_answer();
@@ -937,7 +938,7 @@ fn test_reveal_by_validator_when_proposal_is_already_reveal() {
     let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
     testing_env!(context.build());
 
-    contract.commit_by_validator(request_id.clone(), answer.clone());
+    contract.commit_by_validator(request_id.clone(), answer);
 
     let logs = get_logs();
     assert_eq!(logs.len(), 1);
@@ -989,7 +990,7 @@ fn test_reveal_by_validator_when_answer_not_equal() {
     let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
     testing_env!(context.build());
 
-    contract.commit_by_validator(request_id.clone(), answer.clone());
+    contract.commit_by_validator(request_id.clone(), answer);
 
     let mut answer: Vec<AccountId> = generate_validator_answer();
     answer[9] = "jane.near".parse().unwrap();
@@ -1003,7 +1004,7 @@ fn test_reveal_by_validator_when_answer_not_equal() {
     let reveal_validator_time = 100000000 + (7 * 60 * 1_000_000_000);
     let context = get_context("hassel.near".parse().unwrap(), reveal_validator_time);
     testing_env!(context.build());
-    let result = contract.reveal_by_validator(request_id.clone(), answer.clone(), message.clone());
+    let result = contract.reveal_by_validator(request_id, answer.clone(), message);
 
     assert_eq!(result, RevealValidatorResult::Fail);
 

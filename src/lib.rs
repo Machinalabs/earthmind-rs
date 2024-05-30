@@ -21,6 +21,7 @@ pub struct Contract {
 
 #[near_bindgen]
 impl Contract {
+    #[allow(clippy::use_self)]
     #[init]
     pub fn new() -> Self {
         Self {
@@ -161,10 +162,9 @@ impl Contract {
             return CommitMinerResult::Fail;
         }
 
-        let complete_request: &mut Request = match self.get_request_by_id(request_id) {
-            Some(request) => request,
-            None => panic!("Request not found"),
-        };
+        let complete_request: &mut Request = self
+            .get_request_by_id(request_id)
+            .map_or_else(|| panic!("Request not found"), |request| request);
 
         assert_eq!(
             Self::get_stage(complete_request.start_time),
@@ -236,10 +236,9 @@ impl Contract {
             return CommitValidatorResult::Fail;
         }
 
-        let complete_request: &mut Request = match self.get_request_by_id(request_id) {
-            Some(request) => request,
-            None => panic!("Request not found"),
-        };
+        let complete_request: &mut Request = self
+            .get_request_by_id(request_id)
+            .map_or_else(|| panic!("Request not found"), |request| request);
 
         assert_eq!(
             Self::get_stage(complete_request.start_time),
@@ -289,10 +288,9 @@ impl Contract {
             return RevealMinerResult::Fail;
         }
 
-        let complete_request = match self.get_request_by_id(request_id.clone()) {
-            Some(request) => request,
-            None => panic!("Request not found"),
-        };
+        let complete_request = self
+            .get_request_by_id(request_id.clone())
+            .map_or_else(|| panic!("Request not found"), |request| request);
 
         assert_eq!(
             Self::get_stage(complete_request.start_time),
@@ -300,10 +298,10 @@ impl Contract {
             "Not at RevealMiners stage"
         );
 
-        let save_proposal = match complete_request.miners_proposals.get_mut(&miner) {
-            Some(proposal) => proposal,
-            None => panic!("proposal not found"),
-        };
+        let save_proposal = complete_request
+            .miners_proposals
+            .get_mut(&miner)
+            .map_or_else(|| panic!("proposal not found"), |proposal| proposal);
 
         if save_proposal.is_revealed {
             log!("Proposal already revealed");
@@ -343,10 +341,9 @@ impl Contract {
             return RevealValidatorResult::Fail;
         }
 
-        let complete_request = match self.get_request_by_id(request_id.clone()) {
-            Some(request) => request,
-            None => panic!("Request not found"),
-        };
+        let complete_request = self
+            .get_request_by_id(request_id.clone())
+            .map_or_else(|| panic!("Request not found"), |request| request);
 
         assert_eq!(
             Self::get_stage(complete_request.start_time),
@@ -354,10 +351,10 @@ impl Contract {
             "Not at RevealValidators stage"
         );
 
-        let save_proposal = match complete_request.validators_proposals.get_mut(&validator) {
-            Some(proposal) => proposal,
-            None => panic!("proposal not found"),
-        };
+        let save_proposal = complete_request
+            .validators_proposals
+            .get_mut(&validator)
+            .map_or_else(|| panic!("proposal not found"), |proposal| proposal);
 
         if save_proposal.is_revealed {
             log!("Proposal already revealed");
