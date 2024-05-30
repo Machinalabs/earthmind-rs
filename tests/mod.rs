@@ -1,5 +1,5 @@
 extern crate earthmind_rs;
-use earthmind_rs::models::models::{
+use earthmind_rs::models::earthmind_models::{
     CommitMinerResult, CommitValidatorResult, RegisterMinerResult, RegisterRequestResult,
     RegisterValidatorResult, RevealMinerResult, RevealValidatorResult,
 };
@@ -9,7 +9,6 @@ use near_sdk::{
     test_utils::{get_logs, VMContextBuilder},
     testing_env, AccountId,
 };
-
 
 fn generate_validator_answer() -> Vec<AccountId> {
     let value = vec![
@@ -24,7 +23,7 @@ fn generate_validator_answer() -> Vec<AccountId> {
         "felix.near".parse().unwrap(),
         "margaret.near".parse().unwrap(),
     ];
-    return value;
+    value
 }
 
 fn get_context(predecessor_account_id: AccountId, block_timestamp: u64) -> VMContextBuilder {
@@ -347,7 +346,8 @@ fn test_hash_validator_answer_when_answer_is_not_complete() {
     let answer = generate_validator_answer();
     let answer: Vec<AccountId> = answer[0..answer.len() - 1].to_vec();
     let message = "It's a cool NFT".to_string();
-    contract.hash_validator_answer(request_id, answer.clone(), message);
+
+    contract.hash_validator_answer(request_id, answer, message);
 }
 
 // Commit by miner
@@ -375,7 +375,10 @@ fn test_commit_by_miner_when_miner_and_request_exist() {
     assert_eq!(logs.len(), 3);
 
     assert_eq!(logs[0], "Registered new miner: hassel.near");
-    assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(
+        logs[1],
+        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+    );
     assert_eq!(logs[2], "Miner proposal registered successfully");
 }
 
@@ -391,7 +394,7 @@ fn test_commit_by_miner_when_miner_dont_registered_and_request_exist() {
     let message = "Should we add this new NFT to our protocol?";
     contract.request_governance_decision(message.to_string());
 
-    let context = get_context("edson.near".parse().unwrap(),100000000);
+    let context = get_context("edson.near".parse().unwrap(), 100000000);
     testing_env!(context.build());
 
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
@@ -430,7 +433,6 @@ fn test_commit_by_miner_when_miner_registered_and_request_dont_exist() {
 
 #[test]
 fn test_commit_by_miner_when_miner_and_request_exist_and_commit_already() {
-
     let context = get_context("hassel.near".parse().unwrap(), 100000000);
     testing_env!(context.build());
 
@@ -477,10 +479,13 @@ fn test_commit_by_validator_when_validator_and_request_exist() {
     let logs = get_logs();
     assert_eq!(logs.len(), 2);
     assert_eq!(logs[0], "Registered new validator: hassel.near");
-    assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
-    
+    assert_eq!(
+        logs[1],
+        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+    );
+
     let commit_validator_time = 100000000 + (5 * 60 * 1_000_000_000);
-    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time );
+    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
     testing_env!(context.build());
 
     let result = contract.commit_by_validator(request_id, answer);
@@ -557,13 +562,13 @@ fn test_commit_by_validator_when_miner_and_request_exist_and_commit_already() {
     let answer = "cbc707592325bc03fead86ad6207eabb58a0657fa235f72dc500d5f1965ba856".to_string();
 
     let commit_validator_time = 100000000 + (5 * 60 * 1_000_000_000);
-    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time );
+    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
     testing_env!(context.build());
 
     contract.commit_by_validator(request_id.clone(), answer.clone());
 
     let commit_validator_time = 100000000 + (5 * 60 * 1_000_000_000) + 1;
-    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time );
+    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
     testing_env!(context.build());
 
     let result = contract.commit_by_validator(request_id, answer);
@@ -592,7 +597,7 @@ fn test_reveal_by_miner() {
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
     let answer = "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464".to_string();
 
-    contract.commit_by_miner(request_id.clone(), answer);
+    contract.commit_by_miner(request_id, answer);
 
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
     let answer = true;
@@ -602,11 +607,14 @@ fn test_reveal_by_miner() {
     assert_eq!(logs.len(), 3);
 
     assert_eq!(logs[0], "Registered new miner: hassel.near");
-    assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(
+        logs[1],
+        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+    );
     assert_eq!(logs[2], "Miner proposal registered successfully");
 
     let reveal_miner_time = 100000000 + (3 * 60 * 1_000_000_000);
-    let context = get_context("hassel.near".parse().unwrap(), reveal_miner_time );
+    let context = get_context("hassel.near".parse().unwrap(), reveal_miner_time);
     testing_env!(context.build());
     let result = contract.reveal_by_miner(request_id, answer, message);
 
@@ -614,7 +622,6 @@ fn test_reveal_by_miner() {
 
     let logs = get_logs();
     assert_eq!(logs.len(), 0);
-
 }
 
 #[test]
@@ -632,7 +639,7 @@ fn test_reveal_by_miner_when_miner_is_not_registered() {
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
     let answer = "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464".to_string();
 
-    contract.commit_by_miner(request_id.clone(), answer);
+    contract.commit_by_miner(request_id, answer);
 
     let context = get_context("edson.near".parse().unwrap(), 100000000);
     testing_env!(context.build());
@@ -666,8 +673,8 @@ fn test_reveal_by_miner_when_request_is_not_registered() {
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
     let answer = "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464".to_string();
 
-    contract.commit_by_miner(request_id.clone(), answer);
-    let request_id ="0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725".to_string();
+    contract.commit_by_miner(request_id, answer);
+    let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725".to_string();
 
     let answer = true;
     let message = "It's a cool NFT".to_string();
@@ -679,7 +686,10 @@ fn test_reveal_by_miner_when_request_is_not_registered() {
     assert_eq!(logs.len(), 4);
 
     assert_eq!(logs[0], "Registered new miner: hassel.near");
-    assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(
+        logs[1],
+        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+    );
     assert_eq!(logs[2], "Miner proposal registered successfully");
     assert_eq!(logs[3], "Request is not registered: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725");
 }
@@ -705,15 +715,17 @@ fn test_reveal_by_miner_when_proposal_is_already_reveal() {
     assert_eq!(logs.len(), 3);
 
     assert_eq!(logs[0], "Registered new miner: hassel.near");
-    assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(
+        logs[1],
+        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+    );
     assert_eq!(logs[2], "Miner proposal registered successfully");
-
 
     let answer = true;
     let message = "It's a cool NFT".to_string();
 
     let reveal_miner_time = 100000000 + (3 * 60 * 1_000_000_000);
-    let context = get_context("hassel.near".parse().unwrap(), reveal_miner_time );
+    let context = get_context("hassel.near".parse().unwrap(), reveal_miner_time);
     testing_env!(context.build());
 
     contract.reveal_by_miner(request_id.clone(), answer, message.clone());
@@ -748,14 +760,17 @@ fn test_reveal_by_miner_when_answer_not_equal() {
     assert_eq!(logs.len(), 3);
 
     assert_eq!(logs[0], "Registered new miner: hassel.near");
-    assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(
+        logs[1],
+        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+    );
     assert_eq!(logs[2], "Miner proposal registered successfully");
 
     let answer = false;
     let message = "It's a cool NFT".to_string();
 
     let reveal_miner_time = 100000000 + (3 * 60 * 1_000_000_000);
-    let context = get_context("hassel.near".parse().unwrap(), reveal_miner_time );
+    let context = get_context("hassel.near".parse().unwrap(), reveal_miner_time);
     testing_env!(context.build());
     let result = contract.reveal_by_miner(request_id, answer, message);
 
@@ -788,11 +803,13 @@ fn test_reveal_by_validator() {
     assert_eq!(logs.len(), 2);
 
     assert_eq!(logs[0], "Registered new validator: hassel.near");
-    assert_eq!(logs[1], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
-    
+    assert_eq!(
+        logs[1],
+        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+    );
 
     let commit_validator_time = 100000000 + (5 * 60 * 1_000_000_000);
-    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time );
+    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
     testing_env!(context.build());
 
     contract.commit_by_validator(request_id.clone(), answer);
@@ -802,7 +819,7 @@ fn test_reveal_by_validator() {
     assert_eq!(logs[0], "Validator proposal registered successfully");
 
     let reveal_validator_time = 100000000 + (7 * 60 * 1_000_000_000);
-    let context = get_context("hassel.near".parse().unwrap(), reveal_validator_time );
+    let context = get_context("hassel.near".parse().unwrap(), reveal_validator_time);
     testing_env!(context.build());
 
     let answer = generate_validator_answer();
@@ -810,8 +827,6 @@ fn test_reveal_by_validator() {
     let result = contract.reveal_by_validator(request_id, answer, message);
 
     assert_eq!(result, RevealValidatorResult::Success);
-
-   
 }
 
 #[test]
@@ -830,10 +845,10 @@ fn test_reveal_by_validator_when_validator_is_not_registered() {
     let answer = "cbc707592325bc03fead86ad6207eabb58a0657fa235f72dc500d5f1965ba856".to_string();
 
     let commit_validator_time = 100000000 + (5 * 60 * 1_000_000_000);
-    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time );
+    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
     testing_env!(context.build());
 
-    contract.commit_by_validator(request_id.clone(), answer.clone());
+    contract.commit_by_validator(request_id.clone(), answer);
 
     let context = get_context("edson.near".parse().unwrap(), 100000000);
     testing_env!(context.build());
@@ -869,13 +884,16 @@ fn test_reveal_by_validator_when_request_is_not_registered() {
     assert_eq!(logs.len(), 2);
 
     assert_eq!(logs[0], "Registered new validator: hassel.near");
-    assert_eq!(logs[1],"Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(
+        logs[1],
+        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+    );
 
     let commit_validator_time = 100000000 + (5 * 60 * 1_000_000_000);
-    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time );
+    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
     testing_env!(context.build());
 
-    contract.commit_by_validator(request_id.clone(), answer.clone());
+    contract.commit_by_validator(request_id, answer);
 
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725".to_string();
     let answer: Vec<AccountId> = generate_validator_answer();
@@ -911,20 +929,23 @@ fn test_reveal_by_validator_when_proposal_is_already_reveal() {
     assert_eq!(logs.len(), 2);
 
     assert_eq!(logs[0], "Registered new validator: hassel.near");
-    assert_eq!(logs[1],"Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
-   
+    assert_eq!(
+        logs[1],
+        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+    );
+
     let commit_validator_time = 100000000 + (5 * 60 * 1_000_000_000);
-    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time );
+    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
     testing_env!(context.build());
 
-    contract.commit_by_validator(request_id.clone(), answer.clone());
+    contract.commit_by_validator(request_id.clone(), answer);
 
     let logs = get_logs();
     assert_eq!(logs.len(), 1);
     assert_eq!(logs[0], "Validator proposal registered successfully");
 
     let reveal_validator_time = 100000000 + (7 * 60 * 1_000_000_000);
-    let context = get_context("hassel.near".parse().unwrap(), reveal_validator_time );
+    let context = get_context("hassel.near".parse().unwrap(), reveal_validator_time);
     testing_env!(context.build());
 
     let answer: Vec<AccountId> = generate_validator_answer();
@@ -956,18 +977,20 @@ fn test_reveal_by_validator_when_answer_not_equal() {
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
     let answer = "cbc707592325bc03fead86ad6207eabb58a0657fa235f72dc500d5f1965ba856".to_string();
 
-
     let logs = get_logs();
     assert_eq!(logs.len(), 2);
 
     assert_eq!(logs[0], "Registered new validator: hassel.near");
-    assert_eq!(logs[1],"Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(
+        logs[1],
+        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+    );
 
     let commit_validator_time = 100000000 + (5 * 60 * 1_000_000_000);
-    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time );
+    let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
     testing_env!(context.build());
 
-    contract.commit_by_validator(request_id.clone(), answer.clone());
+    contract.commit_by_validator(request_id.clone(), answer);
 
     let mut answer: Vec<AccountId> = generate_validator_answer();
     answer[9] = "jane.near".parse().unwrap();
@@ -979,9 +1002,9 @@ fn test_reveal_by_validator_when_answer_not_equal() {
     assert_eq!(logs[0], "Validator proposal registered successfully");
 
     let reveal_validator_time = 100000000 + (7 * 60 * 1_000_000_000);
-    let context = get_context("hassel.near".parse().unwrap(), reveal_validator_time );
+    let context = get_context("hassel.near".parse().unwrap(), reveal_validator_time);
     testing_env!(context.build());
-    let result = contract.reveal_by_validator(request_id.clone(), answer.clone(), message.clone());
+    let result = contract.reveal_by_validator(request_id, answer.clone(), message);
 
     assert_eq!(result, RevealValidatorResult::Fail);
 
