@@ -6,11 +6,11 @@ use near_sdk::store::{LookupMap, Vector};
 use near_sdk::{env, log, near_bindgen, require, AccountId, PanicOnDefault};
 
 type Hash = String;
-const two_minutes : u64 = 2 * 60 * 1_000_000_000; 
-const COMMIT_MINER_DURATION: u64 = two_minutes; // 2 minutes in nanoseconds
-const REVEAL_MINER_DURATION: u64 = two_minutes; // 2 minutes in nanoseconds
-const COMMIT_VALIDATOR_DURATION: u64 = two_minutes; // 2 minutes in nanoseconds
-const REVEAL_VALIDATOR_DURATION: u64 = two_minutes; // 2 minutes in nanoseconds
+const two_minutes : u64 = 2 * 60 * 1_000_000_000; // 2 minutes in nanoseconds
+const COMMIT_MINER_DURATION: u64 = two_minutes; 
+const REVEAL_MINER_DURATION: u64 = two_minutes; 
+const COMMIT_VALIDATOR_DURATION: u64 = two_minutes; 
+const REVEAL_VALIDATOR_DURATION: u64 = two_minutes; 
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
