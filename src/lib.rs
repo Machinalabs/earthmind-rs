@@ -4,7 +4,6 @@ pub mod events;
 
 use crate::events::*;
 
-use hex;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::store::{LookupMap, Vector};
 use near_sdk::{env, log, near_bindgen, require, AccountId, PanicOnDefault};
@@ -56,8 +55,8 @@ impl Contract {
             standard: "nep171".to_string(),
             version: "1.0.0".to_string(),
             event: EventLogVariant::RegisterMiner(vec![RegisterMinerLog {
-                    miner : new_miner_id,
-                }]),
+                miner: new_miner_id,
+            }]),
         };
         env::log_str(&register_miner_log.to_string());
         RegisterMinerResult::Success
@@ -89,8 +88,8 @@ impl Contract {
             standard: "nep171".to_string(),
             version: "1.0.0".to_string(),
             event: EventLogVariant::RegisterValidator(vec![RegisterValidatorLog {
-                    validator : new_validator_id,
-                }]),
+                validator: new_validator_id,
+            }]),
         };
         env::log_str(&register_validator_log.to_string());
 
@@ -131,8 +130,8 @@ impl Contract {
             standard: "nep171".to_string(),
             version: "1.0.0".to_string(),
             event: EventLogVariant::RegisterRequest(vec![RegisterRequestLog {
-                    request_id : new_request_id_hex,
-                }]),
+                request_id: new_request_id_hex,
+            }]),
         };
         env::log_str(&register_request_log.to_string());
         RegisterRequestResult::Success

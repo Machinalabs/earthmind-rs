@@ -1,6 +1,6 @@
-use std::fmt;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::AccountId;
+use std::fmt;
 
 // Enum that represents data type of the eventlog
 
@@ -40,14 +40,14 @@ impl fmt::Display for EventLog {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct RegisterMinerLog {
-    pub miner : AccountId,
+    pub miner: AccountId,
 }
 
 //An event log to capture validator registeres
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct RegisterValidatorLog {
-    pub validator : AccountId,
+    pub validator: AccountId,
 }
 
 //An event log to capture validator registeres
@@ -81,7 +81,7 @@ mod tests {
     }
 
     #[test]
-    fn nep_format_register_validator(){
+    fn nep_format_register_validator() {
         let expected = r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_validator","data":[{"validator":"hassel.near"},{"validator":"edson.near"}]}"#;
         let log = EventLog {
             standard: "nep171".to_string(),
@@ -106,10 +106,12 @@ mod tests {
             version: "1.0.0".to_string(),
             event: EventLogVariant::RegisterRequest(vec![
                 RegisterRequestLog {
-                    request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string(),
+                    request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+                        .to_string(),
                 },
                 RegisterRequestLog {
-                    request_id: "38d15af71379737839e4738066fd4091428081d6a57498b2852337a195bc9f5f".to_string(),
+                    request_id: "38d15af71379737839e4738066fd4091428081d6a57498b2852337a195bc9f5f"
+                        .to_string(),
                 },
             ]),
         };
