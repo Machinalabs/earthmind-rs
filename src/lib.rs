@@ -1,5 +1,10 @@
 pub mod models;
 use crate::models::earthmind_models::*;
+pub mod events;
+
+use crate::events::*;
+use crate::models::models::*;
+use hex;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::store::{LookupMap, Vector};
 use near_sdk::{env, log, near_bindgen, require, AccountId, PanicOnDefault};
@@ -10,6 +15,11 @@ const COMMIT_MINER_DURATION: u64 = TWO_MINUTES;
 const REVEAL_MINER_DURATION: u64 = TWO_MINUTES;
 const COMMIT_VALIDATOR_DURATION: u64 = TWO_MINUTES;
 const REVEAL_VALIDATOR_DURATION: u64 = TWO_MINUTES;
+const TWO_MINUTES : u64 = 2 * 60 * 1_000_000_000; // 2 minutes in nanoseconds
+const COMMIT_MINER_DURATION: u64 = TWO_MINUTES; 
+const REVEAL_MINER_DURATION: u64 = TWO_MINUTES; 
+const COMMIT_VALIDATOR_DURATION: u64 = TWO_MINUTES; 
+const REVEAL_VALIDATOR_DURATION: u64 = TWO_MINUTES; 
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
@@ -47,6 +57,14 @@ impl Contract {
 
         log!("Registered new miner: {}", new_miner_id);
 
+        let register_miner_log = EventLog {
+            standard: "nep171".to_string(),
+            version: "1.0.0".to_string(),
+            event: EventLogVariant::RegisterMiner(vec![RegisterMinerLog {
+                    miner : new_miner_id,
+                }]),
+        };
+        env::log_str(&register_miner_log.to_string());
         RegisterMinerResult::Success
     }
 
@@ -71,6 +89,15 @@ impl Contract {
         self.validators.push(new_validator_id.clone());
 
         log!("Registered new validator: {}", new_validator_id);
+
+        let register_validator_log = EventLog {
+            standard: "nep171".to_string(),
+            version: "1.0.0".to_string(),
+            event: EventLogVariant::RegisterValidator(vec![RegisterValidatorLog {
+                    validator : new_validator_id,
+                }]),
+        };
+        env::log_str(&register_validator_log.to_string());
 
         RegisterValidatorResult::Success
     }
@@ -105,6 +132,14 @@ impl Contract {
         self.requests.push(new_request);
 
         log!("Registered new request: {}", new_request_id_hex);
+        let register_request_log = EventLog {
+            standard: "nep171".to_string(),
+            version: "1.0.0".to_string(),
+            event: EventLogVariant::RegisterRequest(vec![RegisterRequestLog {
+                    request_id : new_request_id_hex,
+                }]),
+        };
+        env::log_str(&register_request_log.to_string());
         RegisterRequestResult::Success
     }
 
