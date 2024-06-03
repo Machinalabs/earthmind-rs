@@ -3,7 +3,7 @@ use crate::models::earthmind_models::*;
 pub mod events;
 
 use crate::events::*;
-use crate::models::models::*;
+
 use hex;
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::store::{LookupMap, Vector};
@@ -15,11 +15,6 @@ const COMMIT_MINER_DURATION: u64 = TWO_MINUTES;
 const REVEAL_MINER_DURATION: u64 = TWO_MINUTES;
 const COMMIT_VALIDATOR_DURATION: u64 = TWO_MINUTES;
 const REVEAL_VALIDATOR_DURATION: u64 = TWO_MINUTES;
-const TWO_MINUTES : u64 = 2 * 60 * 1_000_000_000; // 2 minutes in nanoseconds
-const COMMIT_MINER_DURATION: u64 = TWO_MINUTES; 
-const REVEAL_MINER_DURATION: u64 = TWO_MINUTES; 
-const COMMIT_VALIDATOR_DURATION: u64 = TWO_MINUTES; 
-const REVEAL_VALIDATOR_DURATION: u64 = TWO_MINUTES; 
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]

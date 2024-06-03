@@ -50,9 +50,10 @@ fn test_register_miner() {
     assert!(contract.get_register_miner(miner_1).is_some());
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 1);
+    assert_eq!(logs.len(), 2);
     assert_eq!(logs[0], "Registered new miner: hassel.near");
-
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_miner","data":[{"miner":"hassel.near"}]}"#);
+    
     let context = get_context("edson.near".parse().unwrap(), 100000000);
     testing_env!(context.build());
 
@@ -63,9 +64,12 @@ fn test_register_miner() {
     assert!(contract.get_register_miner(miner_2).is_some());
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 1);
+    assert_eq!(logs.len(), 2);
     assert_eq!(logs[0], "Registered new miner: edson.near");
-}
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_miner","data":[{"miner":"edson.near"}]}"#);
+    
+} 
+
 
 #[test]
 fn test_register_miner_when_is_registered_returns_already_registered() {
@@ -81,14 +85,16 @@ fn test_register_miner_when_is_registered_returns_already_registered() {
 
     let logs = get_logs();
 
-    assert_eq!(logs.len(), 2);
+    assert_eq!(logs.len(), 3);
 
     assert_eq!(logs[0], "Registered new miner: hassel.near");
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_miner","data":[{"miner":"hassel.near"}]}"#);
     assert_eq!(
-        logs[1],
+        logs[2],
         "Attempted to register an already registered miner: hassel.near"
     );
-}
+    
+} 
 
 #[test]
 fn test_get_register_miner() {
@@ -128,9 +134,10 @@ fn test_register_validator() {
     assert!(contract.get_register_validator(validator_1).is_some());
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 1);
+    assert_eq!(logs.len(), 2);
     assert_eq!(logs[0], "Registered new validator: hassel.near");
-
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_validator","data":[{"validator":"hassel.near"}]}"#);
+    
     let context = get_context("edson.near".parse().unwrap(), 100000000);
     testing_env!(context.build());
 
@@ -141,9 +148,11 @@ fn test_register_validator() {
     assert!(contract.get_register_validator(validator_2).is_some());
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 1);
+    assert_eq!(logs.len(), 2);
     assert_eq!(logs[0], "Registered new validator: edson.near");
-}
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_validator","data":[{"validator":"edson.near"}]}"#);
+    
+} 
 
 #[test]
 fn test_register_validator_when_is_registered_returns_already_registered() {
@@ -160,15 +169,16 @@ fn test_register_validator_when_is_registered_returns_already_registered() {
 
     let logs = get_logs();
 
-    assert_eq!(logs.len(), 2);
+    assert_eq!(logs.len(), 3);
 
     assert_eq!(logs[0], "Registered new validator: hassel.near");
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_validator","data":[{"validator":"hassel.near"}]}"#);
     assert_eq!(
-        logs[1],
+        logs[2],
         "Attempted to register an already registered validator: hassel.near"
     );
 }
-
+ 
 #[test]
 fn test_get_register_validator() {
     let context = get_context("hassel.near".parse().unwrap(), 100000000);
@@ -208,11 +218,13 @@ fn test_request_governance_decision() {
     assert!(contract.get_request_by_id(request_id_hex).is_some());
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 1);
+    assert_eq!(logs.len(), 2);
     assert_eq!(
         logs[0],
         "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
     );
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#);
+    
 
     let context = get_context("edson.near".parse().unwrap(), 100000000);
     testing_env!(context.build());
@@ -226,12 +238,15 @@ fn test_request_governance_decision() {
     assert!(contract.get_request_by_id(request_id_hex_2).is_some());
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 1);
+    assert_eq!(logs.len(), 2);
     assert_eq!(
         logs[0],
         "Registered new request: 38d15af71379737839e4738066fd4091428081d6a57498b2852337a195bc9f5f"
     );
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_request","data":[{"request_id":"38d15af71379737839e4738066fd4091428081d6a57498b2852337a195bc9f5f"}]}"#);
+   
 }
+ 
 
 #[test]
 fn test_request_governance_decision_when_is_registered_returns_already_registered() {
@@ -248,17 +263,18 @@ fn test_request_governance_decision_when_is_registered_returns_already_registere
     assert_eq!(result, RegisterRequestResult::AlreadyRegistered);
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 2);
+    assert_eq!(logs.len(), 3);
 
     assert_eq!(
         logs[0],
         "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
     );
+    assert_eq!(logs[1],r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#);
     assert_eq!(
-            logs[1],
+            logs[2],
             "Attempted to register an already registered request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
         );
-}
+} 
 
 // Request by id
 
@@ -372,15 +388,16 @@ fn test_commit_by_miner_when_miner_and_request_exist() {
     assert_eq!(result, CommitMinerResult::Success);
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 3);
+    assert_eq!(logs.len(), 5);
 
     assert_eq!(logs[0], "Registered new miner: hassel.near");
-    assert_eq!(
-        logs[1],
-        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-    );
-    assert_eq!(logs[2], "Miner proposal registered successfully");
-}
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_miner","data":[{"miner":"hassel.near"}]}"#);
+    assert_eq!(logs[2],"Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(logs[3],r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#);
+    assert_eq!(logs[4],"Miner proposal registered successfully");
+
+    
+} 
 
 #[test]
 fn test_commit_by_miner_when_miner_dont_registered_and_request_exist() {
@@ -426,10 +443,11 @@ fn test_commit_by_miner_when_miner_registered_and_request_dont_exist() {
     assert_eq!(result, CommitMinerResult::Fail);
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 2);
+    assert_eq!(logs.len(), 3);
     assert_eq!(logs[0], "Registered new miner: hassel.near");
-    assert_eq!(logs[1], "Request is not registered: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726")
-}
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_miner","data":[{"miner":"hassel.near"}]}"#);
+    assert_eq!(logs[2], "Request is not registered: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+} 
 
 #[test]
 fn test_commit_by_miner_when_miner_and_request_exist_and_commit_already() {
@@ -477,12 +495,15 @@ fn test_commit_by_validator_when_validator_and_request_exist() {
     let answer = "cbc707592325bc03fead86ad6207eabb58a0657fa235f72dc500d5f1965ba856".to_string();
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 2);
+    assert_eq!(logs.len(), 4);
     assert_eq!(logs[0], "Registered new validator: hassel.near");
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_validator","data":[{"validator":"hassel.near"}]}"#);
     assert_eq!(
-        logs[1],
+        logs[2],
         "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
     );
+    assert_eq!(logs[3],r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#);
+    
 
     let commit_validator_time = 100000000 + (5 * 60 * 1_000_000_000);
     let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
@@ -495,7 +516,7 @@ fn test_commit_by_validator_when_validator_and_request_exist() {
     let logs = get_logs();
     assert_eq!(logs.len(), 1);
     assert_eq!(logs[0], "Validator proposal registered successfully");
-}
+} 
 
 #[test]
 fn test_commit_by_validator_when_validator_dont_registered_and_request_exist() {
@@ -541,9 +562,10 @@ fn test_commit_by_validator_when_validator_registered_and_request_dont_exist() {
     assert_eq!(result, CommitValidatorResult::Fail);
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 2);
+    assert_eq!(logs.len(), 3);
     assert_eq!(logs[0], "Registered new validator: hassel.near");
-    assert_eq!(logs[1], "Request is not registered: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726")
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_validator","data":[{"validator":"hassel.near"}]}"#);
+    assert_eq!(logs[2], "Request is not registered: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726")
 }
 
 #[test]
@@ -604,14 +626,14 @@ fn test_reveal_by_miner() {
     let message = "It's a cool NFT".to_string();
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 3);
+    assert_eq!(logs.len(), 5);
 
     assert_eq!(logs[0], "Registered new miner: hassel.near");
-    assert_eq!(
-        logs[1],
-        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-    );
-    assert_eq!(logs[2], "Miner proposal registered successfully");
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_miner","data":[{"miner":"hassel.near"}]}"#);
+    assert_eq!(logs[2],"Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(logs[3],r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#);
+    assert_eq!(logs[4],"Miner proposal registered successfully");
+
 
     let reveal_miner_time = 100000000 + (3 * 60 * 1_000_000_000);
     let context = get_context("hassel.near".parse().unwrap(), reveal_miner_time);
@@ -683,16 +705,15 @@ fn test_reveal_by_miner_when_request_is_not_registered() {
     assert_eq!(result, RevealMinerResult::Fail);
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 4);
+    assert_eq!(logs.len(), 6);
 
     assert_eq!(logs[0], "Registered new miner: hassel.near");
-    assert_eq!(
-        logs[1],
-        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-    );
-    assert_eq!(logs[2], "Miner proposal registered successfully");
-    assert_eq!(logs[3], "Request is not registered: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725");
-}
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_miner","data":[{"miner":"hassel.near"}]}"#);
+    assert_eq!(logs[2], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(logs[3],r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#);
+    assert_eq!(logs[4],"Miner proposal registered successfully");
+    assert_eq!(logs[5], "Request is not registered: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725");
+} 
 
 #[test]
 fn test_reveal_by_miner_when_proposal_is_already_reveal() {
@@ -712,14 +733,13 @@ fn test_reveal_by_miner_when_proposal_is_already_reveal() {
     contract.commit_by_miner(request_id.clone(), answer);
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 3);
+    assert_eq!(logs.len(), 5);
 
     assert_eq!(logs[0], "Registered new miner: hassel.near");
-    assert_eq!(
-        logs[1],
-        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-    );
-    assert_eq!(logs[2], "Miner proposal registered successfully");
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_miner","data":[{"miner":"hassel.near"}]}"#);
+    assert_eq!(logs[2], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(logs[3],r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#);
+    assert_eq!(logs[4], "Miner proposal registered successfully");
 
     let answer = true;
     let message = "It's a cool NFT".to_string();
@@ -738,7 +758,8 @@ fn test_reveal_by_miner_when_proposal_is_already_reveal() {
     assert_eq!(logs.len(), 1);
 
     assert_eq!(logs[0], "Proposal already revealed");
-}
+} 
+
 
 #[test]
 fn test_reveal_by_miner_when_answer_not_equal() {
@@ -757,14 +778,13 @@ fn test_reveal_by_miner_when_answer_not_equal() {
 
     contract.commit_by_miner(request_id.clone(), answer);
     let logs = get_logs();
-    assert_eq!(logs.len(), 3);
+    assert_eq!(logs.len(), 5);
 
     assert_eq!(logs[0], "Registered new miner: hassel.near");
-    assert_eq!(
-        logs[1],
-        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-    );
-    assert_eq!(logs[2], "Miner proposal registered successfully");
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_miner","data":[{"miner":"hassel.near"}]}"#);
+    assert_eq!(logs[2], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(logs[3],r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#);
+    assert_eq!(logs[4], "Miner proposal registered successfully");
 
     let answer = false;
     let message = "It's a cool NFT".to_string();
@@ -781,6 +801,7 @@ fn test_reveal_by_miner_when_answer_not_equal() {
 
     assert_eq!(logs[0], "Answer don't match");
 }
+ 
 
 // Reveal by validator
 
@@ -800,14 +821,13 @@ fn test_reveal_by_validator() {
     let answer = "cbc707592325bc03fead86ad6207eabb58a0657fa235f72dc500d5f1965ba856".to_string();
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 2);
+    assert_eq!(logs.len(), 4);
 
     assert_eq!(logs[0], "Registered new validator: hassel.near");
-    assert_eq!(
-        logs[1],
-        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-    );
-
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_validator","data":[{"validator":"hassel.near"}]}"#);
+    assert_eq!(logs[2], "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(logs[3],r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#);
+    
     let commit_validator_time = 100000000 + (5 * 60 * 1_000_000_000);
     let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
     testing_env!(context.build());
@@ -827,7 +847,7 @@ fn test_reveal_by_validator() {
     let result = contract.reveal_by_validator(request_id, answer, message);
 
     assert_eq!(result, RevealValidatorResult::Success);
-}
+} 
 
 #[test]
 fn test_reveal_by_validator_when_validator_is_not_registered() {
@@ -881,14 +901,13 @@ fn test_reveal_by_validator_when_request_is_not_registered() {
     let answer = "cbc707592325bc03fead86ad6207eabb58a0657fa235f72dc500d5f1965ba856".to_string();
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 2);
+    assert_eq!(logs.len(), 4);
 
     assert_eq!(logs[0], "Registered new validator: hassel.near");
-    assert_eq!(
-        logs[1],
-        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-    );
-
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_validator","data":[{"validator":"hassel.near"}]}"#);
+    assert_eq!(logs[2],"Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(logs[3],r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#);
+    
     let commit_validator_time = 100000000 + (5 * 60 * 1_000_000_000);
     let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
     testing_env!(context.build());
@@ -926,13 +945,13 @@ fn test_reveal_by_validator_when_proposal_is_already_reveal() {
     let answer = "cbc707592325bc03fead86ad6207eabb58a0657fa235f72dc500d5f1965ba856".to_string();
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 2);
+    assert_eq!(logs.len(), 4);
 
     assert_eq!(logs[0], "Registered new validator: hassel.near");
-    assert_eq!(
-        logs[1],
-        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-    );
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_validator","data":[{"validator":"hassel.near"}]}"#);
+    assert_eq!(logs[2],"Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(logs[3],r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#);
+    
 
     let commit_validator_time = 100000000 + (5 * 60 * 1_000_000_000);
     let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
@@ -960,7 +979,7 @@ fn test_reveal_by_validator_when_proposal_is_already_reveal() {
     let logs = get_logs();
     assert_eq!(logs.len(), 1);
     assert_eq!(logs[0], "Proposal already revealed");
-}
+} 
 
 #[test]
 fn test_reveal_by_validator_when_answer_not_equal() {
@@ -978,13 +997,13 @@ fn test_reveal_by_validator_when_answer_not_equal() {
     let answer = "cbc707592325bc03fead86ad6207eabb58a0657fa235f72dc500d5f1965ba856".to_string();
 
     let logs = get_logs();
-    assert_eq!(logs.len(), 2);
+    assert_eq!(logs.len(), 4);
 
     assert_eq!(logs[0], "Registered new validator: hassel.near");
-    assert_eq!(
-        logs[1],
-        "Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-    );
+    assert_eq!(logs[1], r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_validator","data":[{"validator":"hassel.near"}]}"#);
+    assert_eq!(logs[2],"Registered new request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726");
+    assert_eq!(logs[3],r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#);
+    
 
     let commit_validator_time = 100000000 + (5 * 60 * 1_000_000_000);
     let context = get_context("hassel.near".parse().unwrap(), commit_validator_time);
@@ -1012,3 +1031,4 @@ fn test_reveal_by_validator_when_answer_not_equal() {
     assert_eq!(logs.len(), 1);
     assert_eq!(logs[0], "Answer don't match");
 }
+ 
