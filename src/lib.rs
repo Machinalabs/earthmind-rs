@@ -1,12 +1,12 @@
-pub mod models;
-use crate::models::earthmind_models::*;
-pub mod events;
-
-use crate::events::*;
-
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::store::{LookupMap, Vector};
 use near_sdk::{env, log, near_bindgen, require, AccountId, PanicOnDefault};
+
+pub use crate::events::*;
+pub use crate::models::earthmind_models::*;
+
+mod events;
+mod models;
 
 type Hash = String;
 const TWO_MINUTES: u64 = 2 * 60 * 1_000_000_000; // 2 minutes in nanoseconds
@@ -49,8 +49,6 @@ impl Contract {
 
         self.miners.push(new_miner_id.clone());
 
-        log!("Registered new miner: {}", new_miner_id);
-
         let register_miner_log = EventLog {
             standard: "nep171".to_string(),
             version: "1.0.0".to_string(),
@@ -81,8 +79,6 @@ impl Contract {
         }
 
         self.validators.push(new_validator_id.clone());
-
-        log!("Registered new validator: {}", new_validator_id);
 
         let register_validator_log = EventLog {
             standard: "nep171".to_string(),
@@ -125,7 +121,6 @@ impl Contract {
 
         self.requests.push(new_request);
 
-        log!("Registered new request: {}", new_request_id_hex);
         let register_request_log = EventLog {
             standard: "nep171".to_string(),
             version: "1.0.0".to_string(),
@@ -192,7 +187,7 @@ impl Contract {
         }
 
         let complete_request: &mut Request = self
-            .get_request_by_id(request_id)
+            .get_request_by_id(request_id.clone())
             .map_or_else(|| panic!("Request not found"), |request| request);
 
         assert_eq!(
@@ -207,14 +202,20 @@ impl Contract {
         }
 
         let proposal = MinerProposal {
-            proposal_hash: answer,
+            proposal_hash: answer.clone(),
             answer: false,
             is_revealed: false,
         };
 
         complete_request.miners_proposals.insert(miner, proposal);
 
-        log!("Miner proposal registered successfully");
+        let commit_miner_log = EventLog {
+            standard: "nep171".to_string(),
+            version: "1.0.0".to_string(),
+            event: EventLogVariant::CommitMiner(vec![CommitMinerLog { request_id, answer }]),
+        };
+
+        env::log_str(&commit_miner_log.to_string());
 
         CommitMinerResult::Success
     }
@@ -266,7 +267,7 @@ impl Contract {
         }
 
         let complete_request: &mut Request = self
-            .get_request_by_id(request_id)
+            .get_request_by_id(request_id.clone())
             .map_or_else(|| panic!("Request not found"), |request| request);
 
         assert_eq!(
@@ -285,7 +286,7 @@ impl Contract {
         }
 
         let proposal = ValidatorProposal {
-            proposal_hash: answer,
+            proposal_hash: answer.clone(),
             is_revealed: false,
             miner_addresses: Vec::new(),
         };
@@ -294,7 +295,15 @@ impl Contract {
             .validators_proposals
             .insert(validator, proposal);
 
-        log!("Validator proposal registered successfully");
+        let commit_validator_log = EventLog {
+            standard: "nep171".to_string(),
+            version: "1.0.0".to_string(),
+            event: EventLogVariant::CommitValidator(vec![CommitValidatorLog {
+                request_id,
+                answer,
+            }]),
+        };
+        env::log_str(&commit_validator_log.to_string());
 
         CommitValidatorResult::Success
     }
@@ -348,6 +357,18 @@ impl Contract {
 
         save_proposal.answer = answer;
         save_proposal.is_revealed = true;
+
+        let reveal_miner_log = EventLog {
+            standard: "nep171".to_string(),
+            version: "1.0.0".to_string(),
+            event: EventLogVariant::RevealMiner(vec![RevealMinerLog {
+                request_id,
+                answer,
+                message,
+            }]),
+        };
+
+        env::log_str(&reveal_miner_log.to_string());
 
         RevealMinerResult::Success
     }
@@ -417,11 +438,23 @@ impl Contract {
         }
 
         save_proposal.is_revealed = true;
+        let answer_for_log = answer.clone();
 
         for addresses in answer {
             save_proposal.miner_addresses.push(addresses);
         }
 
+        let reveal_validator_log = EventLog {
+            standard: "nep171".to_string(),
+            version: "1.0.0".to_string(),
+            event: EventLogVariant::RevealValidator(vec![RevealValidatorLog {
+                request_id,
+                answer: answer_for_log,
+                message,
+            }]),
+        };
+
+        env::log_str(&reveal_validator_log.to_string());
         RevealValidatorResult::Success
     }
 }

@@ -2,7 +2,7 @@ use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::AccountId;
 use std::fmt;
 
-// Enum that represents data type of the eventlog
+type Hash = String;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "event", content = "data")]
@@ -13,16 +13,18 @@ pub enum EventLogVariant {
     RegisterMiner(Vec<RegisterMinerLog>),
     RegisterValidator(Vec<RegisterValidatorLog>),
     RegisterRequest(Vec<RegisterRequestLog>),
+    CommitMiner(Vec<CommitMinerLog>),
+    CommitValidator(Vec<CommitValidatorLog>),
+    RevealMiner(Vec<RevealMinerLog>),
+    RevealValidator(Vec<RevealValidatorLog>),
 }
 
-//Interface to capture data about an event
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct EventLog {
     pub standard: String,
     pub version: String,
 
-    // `flatten` to not have "event": {<EventLogVariant>} in the JSON, just have the contents of {<EventLogVariant>}.
     #[serde(flatten)]
     pub event: EventLogVariant,
 }
@@ -36,25 +38,52 @@ impl fmt::Display for EventLog {
     }
 }
 
-//An event log to capture miner registered
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct RegisterMinerLog {
     pub miner: AccountId,
 }
 
-//An event log to capture validator registeres
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct RegisterValidatorLog {
     pub validator: AccountId,
 }
 
-//An event log to capture validator registeres
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct RegisterRequestLog {
     pub request_id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(crate = "near_sdk::serde")]
+pub struct CommitMinerLog {
+    pub request_id: String,
+    pub answer: Hash,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(crate = "near_sdk::serde")]
+pub struct CommitValidatorLog {
+    pub request_id: String,
+    pub answer: Hash,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(crate = "near_sdk::serde")]
+pub struct RevealMinerLog {
+    pub request_id: String,
+    pub answer: bool,
+    pub message: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(crate = "near_sdk::serde")]
+pub struct RevealValidatorLog {
+    pub request_id: String,
+    pub answer: Vec<AccountId>,
+    pub message: String,
 }
 
 // TODO: Add tests
@@ -115,6 +144,85 @@ mod tests {
                 },
             ]),
         };
+        assert_eq!(expected, log.to_string());
+    }
+
+    #[test]
+    fn nep_format_commit_miner() {
+        let expected = r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"commit_miner","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":"3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464"}]}"#;
+        let log = EventLog {
+            standard: "nep171".to_string(),
+            version: "1.0.0".to_string(),
+            event: EventLogVariant::CommitMiner(vec![CommitMinerLog {
+                request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+                    .to_string(),
+                answer: "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464"
+                    .to_string(),
+            }]),
+        };
+
+        assert_eq!(expected, log.to_string());
+    }
+
+    #[test]
+    fn nep_format_commit_validator() {
+        let expected = r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"commit_validator","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":"3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464"}]}"#;
+        let log = EventLog {
+            standard: "nep171".to_string(),
+            version: "1.0.0".to_string(),
+            event: EventLogVariant::CommitValidator(vec![CommitValidatorLog {
+                request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+                    .to_string(),
+                answer: "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464"
+                    .to_string(),
+            }]),
+        };
+
+        assert_eq!(expected, log.to_string());
+    }
+
+    #[test]
+    fn nep_format_reveal_miner() {
+        let expected = r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"reveal_miner","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":true,"message":"It's a cool NFT"}]}"#;
+        let log = EventLog {
+            standard: "nep171".to_string(),
+            version: "1.0.0".to_string(),
+            event: EventLogVariant::RevealMiner(vec![RevealMinerLog {
+                request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+                    .to_string(),
+                answer: true,
+                message: "It's a cool NFT".to_string(),
+            }]),
+        };
+
+        assert_eq!(expected, log.to_string());
+    }
+
+    #[test]
+    fn nep_format_reveal_validator() {
+        let expected = r#"EVENT_JSON:{"standard":"nep171","version":"1.0.0","event":"reveal_validator","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":["hassel.near","edson.near","anne.near","bob.near","alice.near","john.near","harry.near","scott.near","felix.near","margaret.near"],"message":"It's a cool NFT"}]}"#;
+        let log = EventLog {
+            standard: "nep171".to_string(),
+            version: "1.0.0".to_string(),
+            event: EventLogVariant::RevealValidator(vec![RevealValidatorLog {
+                request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
+                    .to_string(),
+                answer: vec![
+                    "hassel.near".parse().unwrap(),
+                    "edson.near".parse().unwrap(),
+                    "anne.near".parse().unwrap(),
+                    "bob.near".parse().unwrap(),
+                    "alice.near".parse().unwrap(),
+                    "john.near".parse().unwrap(),
+                    "harry.near".parse().unwrap(),
+                    "scott.near".parse().unwrap(),
+                    "felix.near".parse().unwrap(),
+                    "margaret.near".parse().unwrap(),
+                ],
+                message: "It's a cool NFT".to_string(),
+            }]),
+        };
+
         assert_eq!(expected, log.to_string());
     }
 }
