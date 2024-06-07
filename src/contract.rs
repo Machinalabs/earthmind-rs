@@ -3,7 +3,7 @@ use near_sdk::store::{LookupMap, Vector};
 use near_sdk::{env, log, near_bindgen, require, AccountId, PanicOnDefault};
 
 pub use crate::events::*;
-pub use crate::models::earthmind_models::*;
+pub use crate::models::*;
 
 mod events;
 mod models;

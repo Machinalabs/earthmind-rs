@@ -1,15 +1,12 @@
-extern crate earthmind_rs;
-
 use earthmind_rs::Contract;
+use earthmind_rs::{
+    CommitMinerResult, CommitValidatorResult, RegisterMinerResult, RegisterRequestResult,
+    RegisterValidatorResult, RevealMinerResult, RevealValidatorResult,
+};
 use near_sdk::{
     env,
     test_utils::{get_logs, VMContextBuilder},
     testing_env, AccountId,
-};
-
-pub use earthmind_rs::{
-    CommitMinerResult, CommitValidatorResult, RegisterMinerResult, RegisterRequestResult,
-    RegisterValidatorResult, RevealMinerResult, RevealValidatorResult,
 };
 
 fn generate_validator_answer() -> Vec<AccountId> {
