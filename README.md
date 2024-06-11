@@ -1,7 +1,6 @@
-# EarthMind RS
+# EarthMind
 
-Earthmind allows any protocol to delegate their governance decision to the Earthmind Newtwork 
-
+EarthMind is a protocol for decentralized governance using advanced AI and Blockchain technology to streamline governance decisions for any protocol implementing the EarthMind client contract.
 
 ## Pre Requisites
 
