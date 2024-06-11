@@ -1,5 +1,7 @@
 # EarthMind
 
+A Near Native implementation of the EarthMind Protocol.
+
 EarthMind is a protocol for decentralized governance using advanced AI and Blockchain technology to streamline governance decisions for any protocol implementing the EarthMind client contract.
 
 ## Pre Requisites
