@@ -1,9 +1,10 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::store::LookupMap;
-use near_sdk::AccountId;
+use near_sdk::{AccountId, NearToken};
 
-type Hash = String;
+pub type Hash = String;
+pub type Stake = NearToken;
 
 #[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
 #[serde(crate = "near_sdk::serde")]
