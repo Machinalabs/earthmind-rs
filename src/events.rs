@@ -31,10 +31,7 @@ pub struct EventLog {
 
 impl fmt::Display for EventLog {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_fmt(format_args!(
-            "EVENT_JSON:{}",
-            &serde_json::to_string(self).map_err(|_| fmt::Error)?
-        ))
+        f.write_fmt(format_args!("EVENT_JSON:{}", &serde_json::to_string(self).map_err(|_| fmt::Error)?))
     }
 }
 

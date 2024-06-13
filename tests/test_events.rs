@@ -1,6 +1,6 @@
 use earthmind_rs::{
-    CommitMinerLog, CommitValidatorLog, EventLog, EventLogVariant, RegisterMinerLog,
-    RegisterRequestLog, RegisterValidatorLog, RevealMinerLog, RevealValidatorLog,
+    CommitMinerLog, CommitValidatorLog, EventLog, EventLogVariant, RegisterMinerLog, RegisterRequestLog, RegisterValidatorLog, RevealMinerLog,
+    RevealValidatorLog,
 };
 
 #[test]
@@ -23,7 +23,8 @@ fn test_format_register_miner() {
 
 #[test]
 fn test_format_register_validator() {
-    let expected = r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_validator","data":[{"validator":"hassel.near"},{"validator":"edson.near"}]}"#;
+    let expected =
+        r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_validator","data":[{"validator":"hassel.near"},{"validator":"edson.near"}]}"#;
     let log = EventLog {
         standard: "emip001".to_string(),
         version: "1.0.0".to_string(),
@@ -47,12 +48,10 @@ fn test_format_register_request() {
         version: "1.0.0".to_string(),
         event: EventLogVariant::RegisterRequest(vec![
             RegisterRequestLog {
-                request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-                    .to_string(),
+                request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string(),
             },
             RegisterRequestLog {
-                request_id: "38d15af71379737839e4738066fd4091428081d6a57498b2852337a195bc9f5f"
-                    .to_string(),
+                request_id: "38d15af71379737839e4738066fd4091428081d6a57498b2852337a195bc9f5f".to_string(),
             },
         ]),
     };
@@ -66,8 +65,7 @@ fn test_format_commit_miner() {
         standard: "emip001".to_string(),
         version: "1.0.0".to_string(),
         event: EventLogVariant::CommitMiner(vec![CommitMinerLog {
-            request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-                .to_string(),
+            request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string(),
             answer: "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464".to_string(),
         }]),
     };
@@ -82,8 +80,7 @@ fn test_format_commit_validator() {
         standard: "emip001".to_string(),
         version: "1.0.0".to_string(),
         event: EventLogVariant::CommitValidator(vec![CommitValidatorLog {
-            request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-                .to_string(),
+            request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string(),
             answer: "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464".to_string(),
         }]),
     };
@@ -98,8 +95,7 @@ fn test_format_reveal_miner() {
         standard: "emip001".to_string(),
         version: "1.0.0".to_string(),
         event: EventLogVariant::RevealMiner(vec![RevealMinerLog {
-            request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-                .to_string(),
+            request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string(),
             answer: true,
             message: "It's a cool NFT".to_string(),
         }]),
@@ -115,8 +111,7 @@ fn test_format_reveal_validator() {
         standard: "emip001".to_string(),
         version: "1.0.0".to_string(),
         event: EventLogVariant::RevealValidator(vec![RevealValidatorLog {
-            request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-                .to_string(),
+            request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string(),
             answer: vec![
                 "hassel.near".parse().unwrap(),
                 "edson.near".parse().unwrap(),

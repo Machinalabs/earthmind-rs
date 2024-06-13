@@ -134,9 +134,9 @@ impl Contract {
         // Aqui modificamos la funcion porque si usamos get, obtenemos una referencia inmutable
         // Este tipo de referencia es ideal cuando solo queremos leer el valor que ya está guardado
         // Pero como deseamos obtener una request donde modificaremos el estado de uno de sus valores
-        // Se usa una referencia muteable, por qué? porque ya no es necesario realizar la copia del valor 
-        // que ya estaba, modificar la copia y volver a insertar. Al contrario que con el get_mut modificas 
-        // directamente este valor. 
+        // Se usa una referencia muteable, por qué? porque ya no es necesario realizar la copia del valor
+        // que ya estaba, modificar la copia y volver a insertar. Al contrario que con el get_mut modificas
+        // directamente este valor.
     }
 
     fn get_stage(start_time: u64) -> RequestState {
@@ -195,7 +195,7 @@ impl Contract {
 
                 // @dev I store the request again in the LookupMap
                 //self.requests.insert(request_id, *request);
-                //Por que volver a guardar el valor del request si estás usando su referencia 
+                //Por que volver a guardar el valor del request si estás usando su referencia
                 //para actualizar solo uno de sus valores
 
                 let commit_miner_log = EventLog {
