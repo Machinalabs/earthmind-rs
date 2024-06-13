@@ -129,8 +129,14 @@ impl Contract {
         self.requests.contains_key(&request_id)
     }
 
-    pub fn get_request_by_id(&self, request_id: Hash) -> Option<&Request> {
-        self.requests.get(&request_id)
+    pub fn get_request_by_id(&mut self, request_id: Hash) -> Option<&mut Request> {
+        self.requests.get_mut(&request_id)
+        // Aqui modificamos la funcion porque si usamos get, obtenemos una referencia inmutable
+        // Este tipo de referencia es ideal cuando solo queremos leer el valor que ya está guardado
+        // Pero como deseamos obtener una request donde modificaremos el estado de uno de sus valores
+        // Se usa una referencia muteable, por qué? porque ya no es necesario realizar la copia del valor 
+        // que ya estaba, modificar la copia y volver a insertar. Al contrario que con el get_mut modificas 
+        // directamente este valor. 
     }
 
     fn get_stage(start_time: u64) -> RequestState {
@@ -164,17 +170,17 @@ impl Contract {
     pub fn commit_by_miner(&mut self, request_id: Hash, answer: Hash) -> CommitMinerResult {
         let miner = env::predecessor_account_id();
 
-        if self.is_miner_registered(miner.clone()) {
+        if !self.is_miner_registered(miner.clone()) {
             log!("Miner not registered: {}", miner);
             return CommitMinerResult::Fail;
         }
 
         match self.get_request_by_id(request_id.clone()) {
-            Some(mut request) => {
+            Some(request) => {
                 assert_eq!(Self::get_stage(request.start_time), RequestState::CommitMiners, "Not at CommitMiners stage");
 
                 if request.miners_proposals.get(&miner).is_some() {
-                    log!("This miner has already committed an answer: {}", miner);
+                    log!("This miner have a commit answer: {}", miner);
                     return CommitMinerResult::Fail;
                 }
 
@@ -188,7 +194,9 @@ impl Contract {
                 request.miners_proposals.insert(miner, proposal);
 
                 // @dev I store the request again in the LookupMap
-                self.requests.insert(request_id, request);
+                //self.requests.insert(request_id, *request);
+                //Por que volver a guardar el valor del request si estás usando su referencia 
+                //para actualizar solo uno de sus valores
 
                 let commit_miner_log = EventLog {
                     standard: "emip001".to_string(),
@@ -230,13 +238,13 @@ impl Contract {
     pub fn commit_by_validator(&mut self, request_id: String, answer: Hash) -> CommitValidatorResult {
         let validator = env::predecessor_account_id();
 
-        if self.is_validator_registered(validator.clone()) {
+        if !self.is_validator_registered(validator.clone()) {
             log!("Validator is not registered: {}", validator);
             return CommitValidatorResult::Fail;
         }
 
         match self.get_request_by_id(request_id.clone()) {
-            Some(mut request) => {
+            Some(request) => {
                 assert_eq!(
                     Self::get_stage(request.start_time),
                     RequestState::CommitValidators,
@@ -255,10 +263,11 @@ impl Contract {
                 };
 
                 // @dev I modify the request as 'in memory' and then I store it again in the LookupMap
-                request.validators_proposals.insert(&validator, &proposal);
+                request.validators_proposals.insert(validator, proposal);
 
                 // @dev I store the request again in the LookupMap
-                self.requests.insert(&request_id, &request);
+                // Ya no es necesaria la reinserción porque se trata de una referencia muteable
+                //self.requests.insert(request_id, *request);
 
                 let commit_validator_log = EventLog {
                     standard: "emip001".to_string(),
@@ -280,7 +289,7 @@ impl Contract {
     pub fn reveal_by_miner(&mut self, request_id: String, answer: bool, message: String) -> RevealMinerResult {
         let miner = env::predecessor_account_id();
 
-        if self.is_miner_registered(miner.clone()) {
+        if !self.is_miner_registered(miner.clone()) {
             log!("Miner not registered: {}", miner);
             return RevealMinerResult::Fail;
         }
@@ -323,7 +332,7 @@ impl Contract {
         save_proposal.is_revealed = true;
 
         let reveal_miner_log = EventLog {
-            standard: "nep171".to_string(),
+            standard: "emip001".to_string(),
             version: "1.0.0".to_string(),
             event: EventLogVariant::RevealMiner(vec![RevealMinerLog { request_id, answer, message }]),
         };
@@ -336,7 +345,7 @@ impl Contract {
     pub fn reveal_by_validator(&mut self, request_id: String, answer: Vec<AccountId>, message: String) -> RevealValidatorResult {
         let validator = env::predecessor_account_id();
 
-        if self.is_validator_registered(validator.clone()) {
+        if !self.is_validator_registered(validator.clone()) {
             log!("Validator is not registered: {}", validator);
             return RevealValidatorResult::Fail;
         }
@@ -396,7 +405,7 @@ impl Contract {
         }
 
         let reveal_validator_log = EventLog {
-            standard: "nep171".to_string(),
+            standard: "emip001".to_string(),
             version: "1.0.0".to_string(),
             event: EventLogVariant::RevealValidator(vec![RevealValidatorLog {
                 request_id,
