@@ -2,11 +2,10 @@ use earthmind_rs::Contract;
 use earthmind_rs::{
     CommitMinerResult, CommitValidatorResult, RegisterMinerResult, RegisterRequestResult, RegisterValidatorResult, RevealMinerResult, RevealValidatorResult,
 };
-use near_sdk::NearToken;
+
 use near_sdk::{
-    env,
     test_utils::{get_logs, VMContextBuilder},
-    testing_env, AccountId,
+    testing_env, AccountId, NearToken,
 };
 
 // 1 Near = NearToken::from_yoctonear(10u128.pow(24)).as_near()
@@ -129,7 +128,7 @@ fn test_is_miner_registered_when_not_registered() {
 
     let miner: AccountId = "hassel.near".parse().unwrap();
 
-    assert!(contract.is_miner_registered(miner) == false);
+    assert!(!contract.is_miner_registered(miner));
 }
 
 // Register Validator
@@ -223,53 +222,10 @@ fn test_is_validator_registered_when_not_registered() {
     let contract = Contract::new();
     let validator: AccountId = "hassel.near".parse().unwrap();
 
-    assert!(contract.is_validator_registered(validator) == false);
+    assert!(!contract.is_validator_registered(validator));
 }
 
 // Request Governance Decision
-
-#[test]
-fn test_request_governance_decision() {
-    let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-    testing_env!(context.build());
-
-    let mut contract = Contract::new();
-
-    let message = "Should we add this new NFT to our protocol?";
-
-    let result_1 = contract.request_governance_decision(message.to_string());
-    assert_eq!(result_1, RegisterRequestResult::Success);
-
-    let request_id = env::keccak256(message.as_bytes());
-    let request_id_hex = hex::encode(request_id);
-    assert!(contract.get_request_by_id(request_id_hex).is_some());
-
-    let logs = get_logs();
-    assert_eq!(logs.len(), 1);
-    assert_eq!(
-        logs[0],
-        r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#
-    );
-
-    let context = get_context("edson.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-    testing_env!(context.build());
-
-    let message_2 = "Should we add this to our protocol?";
-    let result_2 = contract.request_governance_decision(message_2.to_string());
-    assert_eq!(result_2, RegisterRequestResult::Success);
-
-    let request_id_2 = env::keccak256(message_2.as_bytes());
-    let request_id_hex_2 = hex::encode(request_id_2);
-    assert!(contract.get_request_by_id(request_id_hex_2).is_some());
-
-    let logs = get_logs();
-    assert_eq!(logs.len(), 1);
-
-    assert_eq!(
-        logs[0],
-        r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"38d15af71379737839e4738066fd4091428081d6a57498b2852337a195bc9f5f"}]}"#
-    );
-}
 
 #[test]
 fn test_request_governance_decision_when_is_registered_returns_already_registered() {
@@ -296,30 +252,6 @@ fn test_request_governance_decision_when_is_registered_returns_already_registere
         logs[1],
         "Attempted to register an already registered request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
     );
-}
-
-// Request by id
-
-#[test]
-fn test_get_request_by_id() {
-    let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-    testing_env!(context.build());
-
-    let mut contract = Contract::new();
-
-    let message = "Should we add this new NFT to our protocol?";
-    contract.request_governance_decision(message.to_string());
-
-    let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726";
-    assert!(contract.get_request_by_id(request_id.to_string()).is_some());
-}
-
-#[test]
-fn test_get_request_by_id_when_not_registered() {
-    let mut contract = Contract::new();
-    let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae727";
-
-    assert!(contract.get_request_by_id(request_id.to_string()).is_none());
 }
 
 // Hash miner answer

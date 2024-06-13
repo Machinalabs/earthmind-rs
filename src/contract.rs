@@ -96,7 +96,7 @@ impl Contract {
         let new_request_id_hex = hex::encode(new_request_id);
 
         //@dev Validate the request is not already registered
-        if self.request_exists(new_request_id_hex.clone()) {
+        if self.get_request_by_id(new_request_id_hex.clone()) {
             log!("Attempted to register an already registered request: {}", new_request_id_hex);
             return RegisterRequestResult::AlreadyRegistered;
         }
@@ -125,18 +125,12 @@ impl Contract {
         RegisterRequestResult::Success
     }
 
-    pub fn request_exists(&self, request_id: Hash) -> bool {
+    pub fn get_request_by_id(&self, request_id: Hash) -> bool {
         self.requests.contains_key(&request_id)
     }
 
-    pub fn get_request_by_id(&mut self, request_id: Hash) -> Option<&mut Request> {
+    fn get_request_by_id_mut(&mut self, request_id: Hash) -> Option<&mut Request> {
         self.requests.get_mut(&request_id)
-        // Aqui modificamos la funcion porque si usamos get, obtenemos una referencia inmutable
-        // Este tipo de referencia es ideal cuando solo queremos leer el valor que ya está guardado
-        // Pero como deseamos obtener una request donde modificaremos el estado de uno de sus valores
-        // Se usa una referencia muteable, por qué? porque ya no es necesario realizar la copia del valor
-        // que ya estaba, modificar la copia y volver a insertar. Al contrario que con el get_mut modificas
-        // directamente este valor.
     }
 
     fn get_stage(start_time: u64) -> RequestState {
@@ -175,7 +169,7 @@ impl Contract {
             return CommitMinerResult::Fail;
         }
 
-        match self.get_request_by_id(request_id.clone()) {
+        match self.get_request_by_id_mut(request_id.clone()) {
             Some(request) => {
                 assert_eq!(Self::get_stage(request.start_time), RequestState::CommitMiners, "Not at CommitMiners stage");
 
@@ -190,13 +184,8 @@ impl Contract {
                     is_revealed: false,
                 };
 
-                // @dev I modify the request as 'in memory' and then I store it again in the LookupMap
+                // @dev Insert miners_proposals using a mut reference
                 request.miners_proposals.insert(miner, proposal);
-
-                // @dev I store the request again in the LookupMap
-                //self.requests.insert(request_id, *request);
-                //Por que volver a guardar el valor del request si estás usando su referencia
-                //para actualizar solo uno de sus valores
 
                 let commit_miner_log = EventLog {
                     standard: "emip001".to_string(),
@@ -243,7 +232,7 @@ impl Contract {
             return CommitValidatorResult::Fail;
         }
 
-        match self.get_request_by_id(request_id.clone()) {
+        match self.get_request_by_id_mut(request_id.clone()) {
             Some(request) => {
                 assert_eq!(
                     Self::get_stage(request.start_time),
@@ -262,12 +251,8 @@ impl Contract {
                     miner_addresses: Vec::new(),
                 };
 
-                // @dev I modify the request as 'in memory' and then I store it again in the LookupMap
+                // @dev Insert miners_proposals using a mut reference
                 request.validators_proposals.insert(validator, proposal);
-
-                // @dev I store the request again in the LookupMap
-                // Ya no es necesaria la reinserción porque se trata de una referencia muteable
-                //self.requests.insert(request_id, *request);
 
                 let commit_validator_log = EventLog {
                     standard: "emip001".to_string(),
@@ -294,13 +279,13 @@ impl Contract {
             return RevealMinerResult::Fail;
         }
 
-        if self.get_request_by_id(request_id.clone()).is_none() {
+        if self.get_request_by_id_mut(request_id.clone()).is_none() {
             log!("Request is not registered: {}", request_id);
             return RevealMinerResult::Fail;
         }
 
         let complete_request = self
-            .get_request_by_id(request_id.clone())
+            .get_request_by_id_mut(request_id.clone())
             .map_or_else(|| panic!("Request not found"), |request| request);
 
         assert_eq!(
@@ -350,13 +335,13 @@ impl Contract {
             return RevealValidatorResult::Fail;
         }
 
-        if self.get_request_by_id(request_id.clone()).is_none() {
+        if self.get_request_by_id_mut(request_id.clone()).is_none() {
             log!("Request is not registered: {}", request_id);
             return RevealValidatorResult::Fail;
         }
 
         let complete_request = self
-            .get_request_by_id(request_id.clone())
+            .get_request_by_id_mut(request_id.clone())
             .map_or_else(|| panic!("Request not found"), |request| request);
 
         assert_eq!(
@@ -416,5 +401,89 @@ impl Contract {
 
         env::log_str(&reveal_validator_log.to_string());
         RevealValidatorResult::Success
+    }
+}
+
+// Test private function "get_request_by_id_mut"
+#[cfg(test)]
+mod test {
+    use super::*;
+    use near_sdk::{
+        env,
+        test_utils::{get_logs, VMContextBuilder},
+        testing_env, AccountId, NearToken,
+    };
+    fn get_context(predecessor_account_id: AccountId, block_timestamp: u64, attached_deposit: NearToken) -> VMContextBuilder {
+        let mut builder = VMContextBuilder::new();
+        builder
+            .predecessor_account_id(predecessor_account_id)
+            .block_timestamp(block_timestamp)
+            .attached_deposit(attached_deposit);
+        builder
+    }
+
+    #[test]
+    fn test_request_governance_decision() {
+        let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        let message = "Should we add this new NFT to our protocol?";
+
+        let result_1 = contract.request_governance_decision(message.to_string());
+        assert_eq!(result_1, RegisterRequestResult::Success);
+
+        let request_id = env::keccak256(message.as_bytes());
+        let request_id_hex = hex::encode(request_id);
+        assert!(contract.get_request_by_id_mut(request_id_hex).is_some());
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 1);
+        assert_eq!(
+            logs[0],
+            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#
+        );
+
+        let context = get_context("edson.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
+        testing_env!(context.build());
+
+        let message_2 = "Should we add this to our protocol?";
+        let result_2 = contract.request_governance_decision(message_2.to_string());
+        assert_eq!(result_2, RegisterRequestResult::Success);
+
+        let request_id_2 = env::keccak256(message_2.as_bytes());
+        let request_id_hex_2 = hex::encode(request_id_2);
+        assert!(contract.get_request_by_id_mut(request_id_hex_2).is_some());
+
+        let logs = get_logs();
+        assert_eq!(logs.len(), 1);
+
+        assert_eq!(
+            logs[0],
+            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"38d15af71379737839e4738066fd4091428081d6a57498b2852337a195bc9f5f"}]}"#
+        );
+    }
+
+    #[test]
+    fn test_get_request_by_id_mut() {
+        let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+
+        let message = "Should we add this new NFT to our protocol?";
+        contract.request_governance_decision(message.to_string());
+
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726";
+        assert!(contract.get_request_by_id_mut(request_id.to_string()).is_some());
+    }
+
+    #[test]
+    fn test_get_request_by_id_mut_when_not_registered() {
+        let mut contract = Contract::new();
+        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae727";
+
+        assert!(contract.get_request_by_id_mut(request_id.to_string()).is_none());
     }
 }
