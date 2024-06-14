@@ -2,6 +2,7 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::store::LookupMap;
 use near_sdk::{env, log, near_bindgen, require, AccountId, PanicOnDefault};
 
+
 pub use crate::constants::*;
 pub use crate::events::*;
 pub use crate::models::*;
@@ -107,6 +108,9 @@ impl Contract {
             start_time: env::block_timestamp(),
             miners_proposals: LookupMap::new(b"m"),
             validators_proposals: LookupMap::new(b"v"),
+            votes_for_miners: LookupMap::new(b"v"),
+            miner_keys: Vec::new(),
+            top_ten: Vec::new(),
         };
 
         // @dev We store the key of the request as the hash of the message
@@ -379,6 +383,8 @@ impl Contract {
 
         if save_proposal.proposal_hash != hash_answer {
             log!("Answer don't match");
+            //log!("save answer: {}", save_proposal.proposal_hash);
+            //log!("hash_answer calculated: {}", hash_answer);
             return RevealValidatorResult::Fail;
         }
 
@@ -386,7 +392,19 @@ impl Contract {
         let answer_for_log = answer.clone();
 
         for addresses in answer {
-            save_proposal.miner_addresses.push(addresses);
+            //@dev Add the original answer that validator commit
+            save_proposal.miner_addresses.push(addresses.clone());
+
+            //@dev Find if the miner already have votes and increase 1
+            if complete_request.votes_for_miners.contains_key(&addresses) {
+                match complete_request.votes_for_miners.get(&addresses) {
+                    Some(num_votes) => complete_request.votes_for_miners.insert(addresses, *num_votes + 1),
+                    None => panic!("miner not found"),
+                };
+            } else {
+                complete_request.votes_for_miners.insert(addresses.clone(), 1);
+                complete_request.miner_keys.push(addresses);
+            }
         }
 
         let reveal_validator_log = EventLog {
@@ -401,6 +419,51 @@ impl Contract {
 
         env::log_str(&reveal_validator_log.to_string());
         RevealValidatorResult::Success
+    }
+
+    pub fn votes_for_miner(&mut self, request_id: String, miner_id: AccountId){
+        if self.get_request_by_id_mut(request_id.clone()).is_none() {
+            log!("Request is not registered: {}", request_id);
+        }
+
+        let complete_request = self
+            .get_request_by_id_mut(request_id.clone())
+            .map_or_else(|| panic!("Request not found"), |request| request);
+
+        match complete_request.votes_for_miners.get(&miner_id){
+            Some(votes) => log!("This miner have {} votes", *votes),
+            None => log!("miner dont have votes")
+        };
+    }
+
+    pub fn get_top_10_voters(&mut self, request_id: String) -> Vec<(AccountId,i32)> {
+
+        if self.get_request_by_id_mut(request_id.clone()).is_none() {
+            log!("Request is not registered: {}", request_id);
+        }
+
+        let complete_request = self
+            .get_request_by_id_mut(request_id.clone())
+            .map_or_else(|| panic!("Request not found"), |request| request);
+
+        assert_eq!(Self::get_stage(complete_request.start_time), RequestState::Ended, "Not stage ended");
+
+        let mut vote_result = Vec::new();
+
+        for miner_keys in complete_request.miner_keys.iter() {
+            if let Some(votes)  = complete_request.votes_for_miners.get(miner_keys){
+                vote_result.push((miner_keys.clone(),votes.clone()));
+            }
+        }
+
+        vote_result.sort_by(|a, b| b.1.cmp(&a.1));
+
+        let top_ten : Vec<_> = vote_result.iter().take(10).cloned().collect();
+        complete_request.top_ten = top_ten.clone();
+
+        log!("top ten is: {:?}", top_ten);
+        return top_ten;
+            
     }
 }
 

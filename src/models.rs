@@ -89,4 +89,7 @@ pub struct Request {
     pub start_time: u64,
     pub miners_proposals: LookupMap<AccountId, MinerProposal>,
     pub validators_proposals: LookupMap<AccountId, ValidatorProposal>,
+    pub votes_for_miners : LookupMap<AccountId, i32>,
+    pub miner_keys : Vec<AccountId>,
+    pub top_ten : Vec<(AccountId,i32)>,
 }
