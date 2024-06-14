@@ -457,7 +457,7 @@ impl Contract {
         vote_result.sort_by(|a, b| b.1.cmp(&a.1));
 
         let top_ten: Vec<_> = vote_result.iter().take(10).cloned().collect();
-        complete_request.top_ten = top_ten.clone();
+        complete_request.top_ten.clone_from(&top_ten);
 
         log!("top ten is: {:?}", top_ten);
         top_ten
