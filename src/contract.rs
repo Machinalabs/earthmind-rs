@@ -2,7 +2,6 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::store::LookupMap;
 use near_sdk::{env, log, near_bindgen, require, AccountId, PanicOnDefault};
 
-
 pub use crate::constants::*;
 pub use crate::events::*;
 pub use crate::models::*;
@@ -421,29 +420,28 @@ impl Contract {
         RevealValidatorResult::Success
     }
 
-    pub fn votes_for_miner(&mut self, request_id: String, miner_id: AccountId){
+    pub fn votes_for_miner(&mut self, request_id: String, miner_id: AccountId) {
         if self.get_request_by_id_mut(request_id.clone()).is_none() {
             log!("Request is not registered: {}", request_id);
         }
 
         let complete_request = self
-            .get_request_by_id_mut(request_id.clone())
+            .get_request_by_id_mut(request_id)
             .map_or_else(|| panic!("Request not found"), |request| request);
 
-        match complete_request.votes_for_miners.get(&miner_id){
+        match complete_request.votes_for_miners.get(&miner_id) {
             Some(votes) => log!("This miner have {} votes", *votes),
-            None => log!("miner dont have votes")
+            None => log!("miner dont have votes"),
         };
     }
 
-    pub fn get_top_10_voters(&mut self, request_id: String) -> Vec<(AccountId,i32)> {
-
+    pub fn get_top_10_voters(&mut self, request_id: String) -> Vec<(AccountId, i32)> {
         if self.get_request_by_id_mut(request_id.clone()).is_none() {
             log!("Request is not registered: {}", request_id);
         }
 
         let complete_request = self
-            .get_request_by_id_mut(request_id.clone())
+            .get_request_by_id_mut(request_id)
             .map_or_else(|| panic!("Request not found"), |request| request);
 
         assert_eq!(Self::get_stage(complete_request.start_time), RequestState::Ended, "Not stage ended");
@@ -451,19 +449,18 @@ impl Contract {
         let mut vote_result = Vec::new();
 
         for miner_keys in complete_request.miner_keys.iter() {
-            if let Some(votes)  = complete_request.votes_for_miners.get(miner_keys){
-                vote_result.push((miner_keys.clone(),votes.clone()));
+            if let Some(votes) = complete_request.votes_for_miners.get(miner_keys) {
+                vote_result.push((miner_keys.clone(), votes.clone()));
             }
         }
 
         vote_result.sort_by(|a, b| b.1.cmp(&a.1));
 
-        let top_ten : Vec<_> = vote_result.iter().take(10).cloned().collect();
+        let top_ten: Vec<_> = vote_result.iter().take(10).cloned().collect();
         complete_request.top_ten = top_ten.clone();
 
         log!("top ten is: {:?}", top_ten);
-        return top_ten;
-            
+        top_ten
     }
 }
 

@@ -1070,7 +1070,7 @@ fn test_reveal_by_validator_when_answer_not_equal() {
 }
 
 #[test]
-fn test_votes_for_miner(){
+fn test_votes_for_miner() {
     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(25)));
     testing_env!(context.build());
 
@@ -1126,8 +1126,7 @@ fn test_votes_for_miner(){
         logs[0],
         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"reveal_validator","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":["hassel.near","edson.near","anne.near","bob.near","alice.near","john.near","harry.near","scott.near","felix.near","margaret.near"],"message":"It's a cool NFT"}]}"#
     );
-    assert_eq!(
-        logs[1], "This miner have 1 votes" );
+    assert_eq!(logs[1], "This miner have 1 votes");
 
     // If we add more than 1 vote
 
@@ -1161,16 +1160,13 @@ fn test_votes_for_miner(){
         logs[0],
         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"reveal_validator","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":["hassel.near","edson.near","anne.near","bob.near","alice.near","john.near","harry.near","scott.near","felix.near","margaret.near"],"message":"It's a cool NFT"}]}"#
     );
-    assert_eq!(
-        logs[1], "This miner have 2 votes" );
-
+    assert_eq!(logs[1], "This miner have 2 votes");
 }
 
 #[test]
-fn test_get_top_10_voters(){
-
+fn test_get_top_10_voters() {
     //Para testear que tenemos el top ten, debo generar la request, registrar miner and validators
-    // hacer el reveal para que se obtengan los votos y ahora si llamo al topten 
+    // hacer el reveal para que se obtengan los votos y ahora si llamo al topten
     let mut contract = Contract::new();
 
     // @dev Register 3 validators
@@ -1258,7 +1254,7 @@ fn test_get_top_10_voters(){
 
     contract.commit_by_validator(request_id.clone(), answer);
 
-    //@dev hassel reveal 
+    //@dev hassel reveal
     let reveal_validator_time = 100000000 + (7 * 60 * 1_000_000_000);
     let context = get_context("hassel.near".parse().unwrap(), reveal_validator_time, NearToken::from_yoctonear(10u128.pow(25)));
     testing_env!(context.build());
@@ -1269,7 +1265,7 @@ fn test_get_top_10_voters(){
 
     assert_eq!(result, RevealValidatorResult::Success);
 
-    //@dev robert reveal 
+    //@dev robert reveal
     let reveal_validator_time = 100000000 + (7 * 60 * 1_000_000_000);
     let context = get_context("robert.near".parse().unwrap(), reveal_validator_time, NearToken::from_yoctonear(10u128.pow(25)));
     testing_env!(context.build());
@@ -1280,7 +1276,7 @@ fn test_get_top_10_voters(){
 
     assert_eq!(result, RevealValidatorResult::Success);
 
-    //@dev edson reveal 
+    //@dev edson reveal
     let reveal_validator_time = 100000000 + (7 * 60 * 1_000_000_000);
     let context = get_context("edson.near".parse().unwrap(), reveal_validator_time, NearToken::from_yoctonear(10u128.pow(25)));
     testing_env!(context.build());
@@ -1299,8 +1295,7 @@ fn test_get_top_10_voters(){
         logs[0],
         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"reveal_validator","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":["hassel.near","edson.near","anne.near","bob.near","alice.near","john.near","harry.near","scott.near","felix.near","margaret.near"],"message":"It's a cool NFT"}]}"#
     );
-    assert_eq!(
-        logs[1], "This miner have 3 votes" );
+    assert_eq!(logs[1], "This miner have 3 votes");
 
     let reveal_top_ten = 100000000 + (10 * 60 * 1_000_000_000);
     let context = get_context("edson.near".parse().unwrap(), reveal_top_ten, NearToken::from_yoctonear(10u128.pow(25)));
