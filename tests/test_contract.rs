@@ -1225,7 +1225,7 @@ fn test_get_top_10_voters() {
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
     let answer = "cbc707592325bc03fead86ad6207eabb58a0657fa235f72dc500d5f1965ba856".to_string();
 
-    contract.commit_by_validator(request_id.clone(), answer);
+    contract.commit_by_validator(request_id, answer);
 
     let logs = get_logs();
     assert_eq!(logs.len(), 1);
@@ -1242,7 +1242,7 @@ fn test_get_top_10_voters() {
     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
     let answer = "78053d3fabbe636a8fb50a9b232b923d9f71f63169605c444414a567c9f59a6f".to_string();
 
-    contract.commit_by_validator(request_id.clone(), answer);
+    contract.commit_by_validator(request_id, answer);
 
     // @dev edson commit an answer
     let commit_validator_time = 100000000 + (5 * 60 * 1_000_000_000);

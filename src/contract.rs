@@ -450,7 +450,7 @@ impl Contract {
 
         for miner_keys in complete_request.miner_keys.iter() {
             if let Some(votes) = complete_request.votes_for_miners.get(miner_keys) {
-                vote_result.push((miner_keys.clone(), votes.clone()));
+                vote_result.push((miner_keys.clone(), *votes));
             }
         }
 
