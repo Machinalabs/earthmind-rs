@@ -1,7 +1,6 @@
 use near_sdk::NearToken;
 
-use common::constants::MINER_1;
-use common::constants::MINER_2;
+use common::constants::{MINER_1, MINER_2};
 use common::environment::Environment;
 use common::types::Log;
 use common::utils::{assert_log, assert_logs, get_account_for_miner, get_default_miner_account};
