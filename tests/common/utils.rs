@@ -1,4 +1,4 @@
-use super::{constants::DEFAULT_MINER_ACCOUNT_ID, types::Log};
+use super::{constants::DEFAULT_MINER_ACCOUNT_ID, constants::DEFAULT_TIMESTAMP, types::Log};
 use near_sdk::{
     test_utils::{get_logs, VMContextBuilder},
     testing_env, AccountId, NearToken,
@@ -6,7 +6,12 @@ use near_sdk::{
 use serde_json::{json, Value};
 
 pub fn set_environment_with(account_id: AccountId) {
-    let context = get_context(account_id, 100000000, NearToken::from_yoctonear(10u128.pow(24)));
+    let context = get_context(account_id, DEFAULT_TIMESTAMP, NearToken::from_yoctonear(10u128.pow(24)));
+    testing_env!(context.build());
+}
+
+pub fn set_environment_with_attached_deposit(account_id: AccountId, attached_deposit: NearToken) {
+    let context = get_context(account_id, DEFAULT_TIMESTAMP, attached_deposit);
     testing_env!(context.build());
 }
 

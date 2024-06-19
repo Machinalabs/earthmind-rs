@@ -4,8 +4,10 @@ use common::constants::MINER_2;
 use common::types::Log;
 use common::utils::assert_logs;
 use common::utils::get_account_for_miner;
+use common::utils::set_environment_with_attached_deposit;
 use earthmind_rs::Contract;
 use earthmind_rs::RegisterMinerResult;
+use near_sdk::NearToken;
 
 pub mod common;
 
@@ -72,16 +74,16 @@ fn test_register_miner_when_is_registered_returns_already_registered() {
     ]);
 }
 
-// #[test]
-// #[should_panic]
-// fn test_register_miner_when_deposit_is_less_min_stake() {
-//     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(23)));
-//     testing_env!(context.build());
+#[test]
+#[should_panic]
+fn test_register_miner_when_deposit_is_less_min_stake() {
+    let miner_1 = get_default_miner_account();
+    set_environment_with_attached_deposit(miner_1.clone(), NearToken::from_yoctonear(10u128.pow(23)));
 
-//     let mut contract = Contract::new();
+    let mut contract = Contract::new();
 
-//     contract.register_miner();
-// }
+    contract.register_miner();
+}
 
 // #[test]
 // fn test_is_miner_registered() {
