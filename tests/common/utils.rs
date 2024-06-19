@@ -1,19 +1,6 @@
-use super::{constants::DEFAULT_MINER_ACCOUNT_ID, constants::DEFAULT_TIMESTAMP, types::Log};
-use near_sdk::{
-    test_utils::{get_logs, VMContextBuilder},
-    testing_env, AccountId, NearToken,
-};
+use super::{constants::DEFAULT_MINER_ACCOUNT_ID, types::Log};
+use near_sdk::{test_utils::get_logs, AccountId};
 use serde_json::{json, Value};
-
-pub fn set_environment_with(account_id: AccountId) {
-    let context = get_context(account_id, DEFAULT_TIMESTAMP, NearToken::from_yoctonear(10u128.pow(24)));
-    testing_env!(context.build());
-}
-
-pub fn set_environment_with_attached_deposit(account_id: AccountId, attached_deposit: NearToken) {
-    let context = get_context(account_id, DEFAULT_TIMESTAMP, attached_deposit);
-    testing_env!(context.build());
-}
 
 pub fn get_account_for_miner(miner: &str) -> AccountId {
     miner.parse().unwrap()
@@ -37,15 +24,6 @@ pub fn generate_validator_answer() -> Vec<AccountId> {
         "margaret.near".parse().unwrap(),
     ];
     value
-}
-
-pub fn get_context(predecessor_account_id: AccountId, block_timestamp: u64, attached_deposit: NearToken) -> VMContextBuilder {
-    let mut builder = VMContextBuilder::new();
-    builder
-        .predecessor_account_id(predecessor_account_id)
-        .block_timestamp(block_timestamp)
-        .attached_deposit(attached_deposit);
-    builder
 }
 
 pub fn assert_log(event_name: &str, data: Vec<(&str, &str)>) {
@@ -91,11 +69,11 @@ pub fn assert_logs(expected_logs: Vec<Log>) {
                     "data": [data_map]
                 });
 
-                // Deserializar ambas cadenas JSON en objetos `Value` para comparación
+                // Deserialize both JSON strings into `Value` objects for comparison
                 let log_event: Value = serde_json::from_str(&logs[i].trim_start_matches("EVENT_JSON:")).unwrap();
                 let expected_event: Value = expected_event;
 
-                // Comparar los objetos JSON
+                // Compare json objects
                 assert_eq!(log_event, expected_event);
             }
             Log::Message(expected_text) => {
