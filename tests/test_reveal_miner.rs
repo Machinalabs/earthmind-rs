@@ -47,7 +47,11 @@ fn test_reveal_by_miner() {
 
     assert_logs(vec![Log::Event {
         event_name: "reveal_miner".to_string(),
-        data: vec![("request_id", json![DEFAULT_REQUEST_ID]), ("answer", json![answer]), ("message", json![message])],
+        data: vec![
+            ("request_id", json![DEFAULT_REQUEST_ID]),
+            ("answer", json![answer]),
+            ("message", json![message]),
+        ],
     }]);
 }
 
@@ -90,15 +94,11 @@ fn test_reveal_by_miner_when_miner_is_not_registered() {
 
     assert_eq!(result, RevealMinerResult::Fail);
 
-    assert_logs(vec![
-        Log::Message("Miner not registered: miner2.near".to_string()),
-    ]);
-
-    
+    assert_logs(vec![Log::Message("Miner not registered: miner2.near".to_string())]);
 }
 
 // @dev possibly this test is not necessary because if the request don't exist, miner is not able to commit
-// This test is about the miner have a mistake with the request id and cannot reveal. 
+// This test is about the miner have a mistake with the request id and cannot reveal.
 // Works with the original idea.
 #[test]
 fn test_reveal_by_miner_when_request_is_not_registered() {
@@ -112,8 +112,7 @@ fn test_reveal_by_miner_when_request_is_not_registered() {
 
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
-   contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
-    
+    contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
 
     let fail_request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725".to_string();
     let answer = true;
@@ -182,11 +181,14 @@ fn test_reveal_by_miner_when_proposal_is_already_reveal() {
     assert_logs(vec![
         Log::Event {
             event_name: "reveal_miner".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID]), ("answer",json![answer]), ("message", json![message])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("answer", json![answer]),
+                ("message", json![message]),
+            ],
         },
         Log::Message("Proposal already revealed".to_string()),
     ]);
-
 }
 
 #[test]
@@ -202,7 +204,7 @@ fn test_reveal_by_miner_when_answer_not_equal() {
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
-    
+
     assert_logs(vec![
         Log::Event {
             event_name: "register_miner".to_string(),
@@ -225,8 +227,5 @@ fn test_reveal_by_miner_when_answer_not_equal() {
     let result = contract.reveal_by_miner(DEFAULT_REQUEST_ID.to_string(), answer, message.to_string());
 
     assert_eq!(result, RevealMinerResult::Fail);
-    assert_logs(vec![
-        Log::Message("Answer don't match".to_string()),
-    ]);
-
+    assert_logs(vec![Log::Message("Answer don't match".to_string())]);
 }

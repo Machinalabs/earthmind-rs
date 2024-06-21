@@ -8,7 +8,6 @@ pub struct Environment {
     attached_deposit: NearToken,
 }
 
-
 impl Environment {
     #[allow(clippy::missing_const_for_fn)]
     pub fn with_account(account_id: AccountId) -> Self {

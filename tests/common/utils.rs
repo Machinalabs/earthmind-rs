@@ -71,7 +71,6 @@ pub fn assert_logs(expected_logs: Vec<Log>) {
                 for (key, value) in data {
                     //data_map.insert(key.to_string(), json!(value));
                     data_map.insert(key.to_string(), value.clone());
-                    
                 }
 
                 let expected_event = json!({
