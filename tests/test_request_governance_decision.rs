@@ -1,93 +1,99 @@
-// use crate::common::utils::{generate_validator_answer, get_context};
-// use earthmind_rs::Contract;
-// use earthmind_rs::{
-//     CommitMinerResult, CommitValidatorResult, RegisterMinerResult, RegisterRequestResult, RegisterValidatorResult, RevealMinerResult, RevealValidatorResult,
-// };
-// use near_sdk::{test_utils::get_logs, testing_env, AccountId, NearToken};
+use near_workspaces::AccountId;
+use serde_json::json;
 
-// #[test]
-// fn test_request_governance_decision_when_is_registered_returns_already_registered() {
-//     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-//     testing_env!(context.build());
+use crate::common::utils::{assert_logs, generate_validator_answer, get_default_validator_account};
+use common::constants::DEFAULT_REQUEST_ID;
+use common::environment::Environment;
+use common::types::Log;
+use common::utils::get_default_miner_account;
 
-//     let mut contract = Contract::new();
+use earthmind_rs::Contract;
+use earthmind_rs::RegisterRequestResult;
 
-//     let message = "Should we add this new NFT to our protocol?";
-//     contract.request_governance_decision(message.to_string());
+pub mod common;
 
-//     let result = contract.request_governance_decision(message.to_string());
+#[test]
+fn test_request_governance_decision_when_is_registered_returns_already_registered() {
+    let miner = get_default_miner_account();
 
-//     assert_eq!(result, RegisterRequestResult::AlreadyRegistered);
+    Environment::with_account(miner).create();
 
-//     let logs = get_logs();
-//     assert_eq!(logs.len(), 2);
+    let mut contract = Contract::new();
 
-//     assert_eq!(
-//         logs[0],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#
-//     );
-//     assert_eq!(
-//         logs[1],
-//         "Attempted to register an already registered request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"
-//     );
-// }
+    let message = "Should we add this new NFT to our protocol?";
+    contract.request_governance_decision(message.to_string());
 
-// // Hash miner answer
+    let result = contract.request_governance_decision(message.to_string());
 
-// #[test]
-// fn test_hash_miner_answer() {
-//     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-//     testing_env!(context.build());
+    assert_eq!(result, RegisterRequestResult::AlreadyRegistered);
 
-//     let mut contract = Contract::new();
+    assert_logs(vec![
+        Log::Event {
+            event_name: "register_request".to_string(),
+            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+        },
+        Log::Message("Attempted to register an already registered request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string()),
+    ]);
+}
 
-//     let message = "Should we add this new NFT to our protocol?";
-//     contract.request_governance_decision(message.to_string());
+// Hash miner answer
 
-//     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
-//     let answer = true;
-//     let message = "It's a cool NFT".to_string();
+#[test]
+fn test_hash_miner_answer() {
+    let miner = get_default_miner_account();
 
-//     let result = contract.hash_miner_answer(request_id, answer, message);
+    Environment::with_account(miner).create();
 
-//     assert_eq!(result, "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464");
-// }
+    let mut contract = Contract::new();
 
-// // Hash validator answer
-// #[test]
-// fn test_hash_validator_answer() {
-//     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-//     testing_env!(context.build());
+    let message = "Should we add this new NFT to our protocol?";
+    contract.request_governance_decision(message.to_string());
 
-//     let mut contract = Contract::new();
+    let request_id = DEFAULT_REQUEST_ID.to_string();
+    let answer = true;
+    let message = "It's a cool NFT".to_string();
 
-//     let message = "Should we add this new NFT to our protocol?";
-//     contract.request_governance_decision(message.to_string());
+    let result = contract.hash_miner_answer(request_id, answer, message);
 
-//     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
-//     let answer = generate_validator_answer();
-//     let message = "It's a cool NFT".to_string();
+    assert_eq!(result, "83a297c4156180a209ab3b4be1f9bb55fe692dd02826a0265431d60c6e2ac871");
+}
 
-//     let result = contract.hash_validator_answer(request_id, answer, message);
+// Hash validator answer
+#[test]
+fn test_hash_validator_answer() {
+    let validator = get_default_validator_account();
 
-//     assert_eq!(result, "cbc707592325bc03fead86ad6207eabb58a0657fa235f72dc500d5f1965ba856");
-// }
+    Environment::with_account(validator).create();
+    let mut contract = Contract::new();
 
-// #[test]
-// #[should_panic]
-// fn test_hash_validator_answer_when_answer_is_not_complete() {
-//     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-//     testing_env!(context.build());
+    let message = "Should we add this new NFT to our protocol?";
+    contract.request_governance_decision(message.to_string());
 
-//     let mut contract = Contract::new();
+    let request_id = DEFAULT_REQUEST_ID.to_string();
+    let answer = generate_validator_answer();
+    let message = "It's a cool NFT".to_string();
 
-//     let message = "Should we add this new NFT to our protocol?";
-//     contract.request_governance_decision(message.to_string());
+    let result = contract.hash_validator_answer(request_id, answer, message);
 
-//     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
-//     let answer = generate_validator_answer();
-//     let answer: Vec<AccountId> = answer[0..answer.len() - 1].to_vec();
-//     let message = "It's a cool NFT".to_string();
+    assert_eq!(result, "bf3250b68ca58d084d4898561d98d6fa9c97863ee644ff49f211ca425b0d6bf5");
+}
 
-//     contract.hash_validator_answer(request_id, answer, message);
-// }
+#[test]
+#[should_panic]
+fn test_hash_validator_answer_when_answer_is_not_complete() {
+    let validator = get_default_validator_account();
+
+    Environment::with_account(validator).create();
+
+    let mut contract = Contract::new();
+
+    let message = "Should we add this new NFT to our protocol?";
+    contract.request_governance_decision(message.to_string());
+
+    let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+    let answer = generate_validator_answer();
+    let answer: Vec<AccountId> = answer[0..answer.len() - 1].to_vec();
+    let message = "It's a cool NFT".to_string();
+
+    contract.hash_validator_answer(request_id, answer, message);
+}

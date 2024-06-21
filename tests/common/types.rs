@@ -2,7 +2,8 @@
 pub enum Log {
     Event {
         event_name: String,
-        data: Vec<(&'static str, &'static str)>,
+        //data: Vec<(&'static str, &'static str)>,
+        data: Vec<(&'static str, serde_json::Value)>,
     },
     Message(String),
 }

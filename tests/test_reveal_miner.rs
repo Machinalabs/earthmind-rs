@@ -1,235 +1,232 @@
-// #[test]
-// fn test_reveal_by_miner() {
-//     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-//     testing_env!(context.build());
+use common::constants::{DEFAULT_MESSAGE_TO_REQUEST, DEFAULT_MINER_ANSWER, DEFAULT_REQUEST_ID, MINER_1, MINER_2, REVEAL_MINER_TIME};
+use common::environment::Environment;
+use common::types::Log;
+use common::utils::{assert_logs, get_account_for_miner, get_default_miner_account};
 
-//     let mut contract = Contract::new();
+use earthmind_rs::{Contract, RevealMinerResult};
 
-//     contract.register_miner();
+use serde_json::json;
+pub mod common;
 
-//     let message = "Should we add this new NFT to our protocol?";
-//     contract.request_governance_decision(message.to_string());
+#[test]
+fn test_reveal_by_miner() {
+    let miner_1 = get_default_miner_account();
 
-//     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
-//     let answer = "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464".to_string();
+    Environment::with_account(miner_1.clone()).create();
+    let mut contract = Contract::new();
 
-//     contract.commit_by_miner(request_id, answer);
+    contract.register_miner();
 
-//     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
-//     let answer = true;
-//     let message = "It's a cool NFT".to_string();
+    contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
-//     let logs = get_logs();
-//     assert_eq!(logs.len(), 3);
+    contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
 
-//     assert_eq!(
-//         logs[0],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_miner","data":[{"miner":"hassel.near"}]}"#
-//     );
-//     assert_eq!(
-//         logs[1],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#
-//     );
-//     assert_eq!(
-//         logs[2],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"commit_miner","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":"3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464"}]}"#
-//     );
+    assert_logs(vec![
+        Log::Event {
+            event_name: "register_miner".to_string(),
+            data: vec![("miner", json![MINER_1])],
+        },
+        Log::Event {
+            event_name: "register_request".to_string(),
+            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+        },
+        Log::Event {
+            event_name: "commit_miner".to_string(),
+            data: vec![("request_id", json![DEFAULT_REQUEST_ID]), ("answer", json![DEFAULT_MINER_ANSWER])],
+        },
+    ]);
 
-//     let reveal_miner_time = 100000000 + (3 * 60 * 1_000_000_000);
-//     let context = get_context("hassel.near".parse().unwrap(), reveal_miner_time, NearToken::from_yoctonear(10u128.pow(24)));
-//     testing_env!(context.build());
-//     let result = contract.reveal_by_miner(request_id, answer, message);
+    Environment::with_account(miner_1).with_block_timestamp(REVEAL_MINER_TIME).create();
 
-//     assert_eq!(result, RevealMinerResult::Success);
+    let answer = true;
+    let message = "It's a cool NFT";
 
-//     let logs = get_logs();
-//     assert_eq!(logs.len(), 1);
-//     assert_eq!(
-//         logs[0],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"reveal_miner","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":true,"message":"It's a cool NFT"}]}"#
-//     );
-// }
+    let result = contract.reveal_by_miner(DEFAULT_REQUEST_ID.to_string(), answer, message.to_string());
 
-// #[test]
-// fn test_reveal_by_miner_when_miner_is_not_registered() {
-//     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-//     testing_env!(context.build());
+    assert_eq!(result, RevealMinerResult::Success);
 
-//     let mut contract = Contract::new();
+    assert_logs(vec![Log::Event {
+        event_name: "reveal_miner".to_string(),
+        data: vec![("request_id", json![DEFAULT_REQUEST_ID]), ("answer", json![answer]), ("message", json![message])],
+    }]);
+}
 
-//     contract.register_miner();
+#[test]
+fn test_reveal_by_miner_when_miner_is_not_registered() {
+    let miner_1 = get_default_miner_account();
 
-//     let message = "Should we add this new NFT to our protocol?";
-//     contract.request_governance_decision(message.to_string());
+    Environment::with_account(miner_1).create();
+    let mut contract = Contract::new();
 
-//     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
-//     let answer = "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464".to_string();
+    // @dev use a register miner to generate a request
+    contract.register_miner();
 
-//     contract.commit_by_miner(request_id, answer);
+    contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
-//     let context = get_context("edson.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-//     testing_env!(context.build());
+    contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
 
-//     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
-//     let answer = true;
-//     let message = "It's a cool NFT".to_string();
+    assert_logs(vec![
+        Log::Event {
+            event_name: "register_miner".to_string(),
+            data: vec![("miner", json![MINER_1])],
+        },
+        Log::Event {
+            event_name: "register_request".to_string(),
+            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+        },
+        Log::Event {
+            event_name: "commit_miner".to_string(),
+            data: vec![("request_id", json![DEFAULT_REQUEST_ID]), ("answer", json![DEFAULT_MINER_ANSWER])],
+        },
+    ]);
 
-//     let result = contract.reveal_by_miner(request_id, answer, message);
+    let miner_2 = get_account_for_miner(MINER_2);
+    Environment::with_account(miner_2).with_block_timestamp(REVEAL_MINER_TIME).create();
 
-//     assert_eq!(result, RevealMinerResult::Fail);
+    let answer = true;
+    let message = "It's a cool NFT";
 
-//     let logs = get_logs();
-//     assert_eq!(logs.len(), 1);
+    let result = contract.reveal_by_miner(DEFAULT_REQUEST_ID.to_string(), answer, message.to_string());
 
-//     assert_eq!(logs[0], "Miner not registered: edson.near");
-// }
+    assert_eq!(result, RevealMinerResult::Fail);
 
-// #[test]
-// fn test_reveal_by_miner_when_request_is_not_registered() {
-//     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-//     testing_env!(context.build());
+    assert_logs(vec![
+        Log::Message("Miner not registered: miner2.near".to_string()),
+    ]);
 
-//     let mut contract = Contract::new();
+    
+}
 
-//     contract.register_miner();
+// @dev possibly this test is not necessary because if the request don't exist, miner is not able to commit
+// This test is about the miner have a mistake with the request id and cannot reveal. 
+// Works with the original idea.
+#[test]
+fn test_reveal_by_miner_when_request_is_not_registered() {
+    let miner_1 = get_default_miner_account();
 
-//     let message = "Should we add this new NFT to our protocol?";
-//     contract.request_governance_decision(message.to_string());
+    Environment::with_account(miner_1).create();
 
-//     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
-//     let answer = "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464".to_string();
+    let mut contract = Contract::new();
 
-//     contract.commit_by_miner(request_id, answer);
-//     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725".to_string();
+    contract.register_miner();
 
-//     let answer = true;
-//     let message = "It's a cool NFT".to_string();
-//     let result = contract.reveal_by_miner(request_id, answer, message);
+    contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
-//     assert_eq!(result, RevealMinerResult::Fail);
+   contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
+    
 
-//     let logs = get_logs();
-//     assert_eq!(logs.len(), 4);
+    let fail_request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725".to_string();
+    let answer = true;
+    let message = "It's a cool NFT".to_string();
 
-//     assert_eq!(
-//         logs[0],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_miner","data":[{"miner":"hassel.near"}]}"#
-//     );
-//     assert_eq!(
-//         logs[1],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#
-//     );
-//     assert_eq!(
-//         logs[2],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"commit_miner","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":"3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464"}]}"#
-//     );
-//     assert_eq!(
-//         logs[3],
-//         "Request is not registered: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725"
-//     );
-// }
+    let result = contract.reveal_by_miner(fail_request_id, answer, message);
 
-// #[test]
-// fn test_reveal_by_miner_when_proposal_is_already_reveal() {
-//     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-//     testing_env!(context.build());
+    assert_eq!(result, RevealMinerResult::Fail);
 
-//     let mut contract = Contract::new();
+    assert_logs(vec![
+        Log::Event {
+            event_name: "register_miner".to_string(),
+            data: vec![("miner", json![MINER_1])],
+        },
+        Log::Event {
+            event_name: "register_request".to_string(),
+            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+        },
+        Log::Event {
+            event_name: "commit_miner".to_string(),
+            data: vec![("request_id", json![DEFAULT_REQUEST_ID]), ("answer", json![DEFAULT_MINER_ANSWER])],
+        },
+        Log::Message("Request is not registered: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae725".to_string()),
+    ]);
+}
 
-//     contract.register_miner();
+#[test]
+fn test_reveal_by_miner_when_proposal_is_already_reveal() {
+    let miner_1 = get_default_miner_account();
 
-//     let message = "Should we add this new NFT to our protocol?";
-//     contract.request_governance_decision(message.to_string());
+    Environment::with_account(miner_1.clone()).create();
 
-//     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
-//     let answer = "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464".to_string();
+    let mut contract = Contract::new();
 
-//     contract.commit_by_miner(request_id.clone(), answer);
+    contract.register_miner();
+    contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
-//     let logs = get_logs();
-//     assert_eq!(logs.len(), 3);
+    contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
 
-//     assert_eq!(
-//         logs[0],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_miner","data":[{"miner":"hassel.near"}]}"#
-//     );
+    assert_logs(vec![
+        Log::Event {
+            event_name: "register_miner".to_string(),
+            data: vec![("miner", json![MINER_1])],
+        },
+        Log::Event {
+            event_name: "register_request".to_string(),
+            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+        },
+        Log::Event {
+            event_name: "commit_miner".to_string(),
+            data: vec![("request_id", json![DEFAULT_REQUEST_ID]), ("answer", json![DEFAULT_MINER_ANSWER])],
+        },
+    ]);
 
-//     assert_eq!(
-//         logs[1],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#
-//     );
-//     assert_eq!(
-//         logs[2],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"commit_miner","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":"3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464"}]}"#
-//     );
+    Environment::with_account(miner_1).with_block_timestamp(REVEAL_MINER_TIME).create();
 
-//     let answer = true;
-//     let message = "It's a cool NFT".to_string();
+    let answer = true;
+    let message = "It's a cool NFT".to_string();
 
-//     let reveal_miner_time = 100000000 + (3 * 60 * 1_000_000_000);
-//     let context = get_context("hassel.near".parse().unwrap(), reveal_miner_time, NearToken::from_yoctonear(10u128.pow(24)));
-//     testing_env!(context.build());
+    contract.reveal_by_miner(DEFAULT_REQUEST_ID.to_string(), answer, message.clone());
 
-//     contract.reveal_by_miner(request_id.clone(), answer, message.clone());
+    let result = contract.reveal_by_miner(DEFAULT_REQUEST_ID.to_string(), answer, message.clone());
 
-//     let result = contract.reveal_by_miner(request_id, answer, message);
+    assert_eq!(result, RevealMinerResult::Fail);
 
-//     assert_eq!(result, RevealMinerResult::Fail);
+    assert_logs(vec![
+        Log::Event {
+            event_name: "reveal_miner".to_string(),
+            data: vec![("request_id", json![DEFAULT_REQUEST_ID]), ("answer",json![answer]), ("message", json![message])],
+        },
+        Log::Message("Proposal already revealed".to_string()),
+    ]);
 
-//     let logs = get_logs();
-//     assert_eq!(logs.len(), 2);
+}
 
-//     assert_eq!(
-//         logs[0],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"reveal_miner","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":true,"message":"It's a cool NFT"}]}"#
-//     );
-//     assert_eq!(logs[1], "Proposal already revealed");
-// }
+#[test]
+fn test_reveal_by_miner_when_answer_not_equal() {
+    let miner_1 = get_default_miner_account();
 
-// #[test]
-// fn test_reveal_by_miner_when_answer_not_equal() {
-//     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-//     testing_env!(context.build());
+    Environment::with_account(miner_1.clone()).create();
 
-//     let mut contract = Contract::new();
+    let mut contract = Contract::new();
 
-//     contract.register_miner();
+    contract.register_miner();
 
-//     let message = "Should we add this new NFT to our protocol?";
-//     contract.request_governance_decision(message.to_string());
+    contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
-//     let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
-//     let answer = "3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464".to_string();
+    contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
+    
+    assert_logs(vec![
+        Log::Event {
+            event_name: "register_miner".to_string(),
+            data: vec![("miner", json![MINER_1])],
+        },
+        Log::Event {
+            event_name: "register_request".to_string(),
+            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+        },
+        Log::Event {
+            event_name: "commit_miner".to_string(),
+            data: vec![("request_id", json![DEFAULT_REQUEST_ID]), ("answer", json![DEFAULT_MINER_ANSWER])],
+        },
+    ]);
 
-//     contract.commit_by_miner(request_id.clone(), answer);
-//     let logs = get_logs();
-//     assert_eq!(logs.len(), 3);
+    Environment::with_account(miner_1).with_block_timestamp(REVEAL_MINER_TIME).create();
 
-//     assert_eq!(
-//         logs[0],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_miner","data":[{"miner":"hassel.near"}]}"#
-//     );
-//     assert_eq!(
-//         logs[1],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#
-//     );
-//     assert_eq!(
-//         logs[2],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"commit_miner","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":"3910deb8f11de66388bddcc1eb1bf1e33319b71a18df2c1019e6d72c6d00f464"}]}"#
-//     );
+    let answer = false;
+    let message = "It's a cool NFT";
+    let result = contract.reveal_by_miner(DEFAULT_REQUEST_ID.to_string(), answer, message.to_string());
 
-//     let answer = false;
-//     let message = "It's a cool NFT".to_string();
+    assert_eq!(result, RevealMinerResult::Fail);
+    assert_logs(vec![
+        Log::Message("Answer don't match".to_string()),
+    ]);
 
-//     let reveal_miner_time = 100000000 + (3 * 60 * 1_000_000_000);
-//     let context = get_context("hassel.near".parse().unwrap(), reveal_miner_time, NearToken::from_yoctonear(10u128.pow(24)));
-//     testing_env!(context.build());
-//     let result = contract.reveal_by_miner(request_id, answer, message);
-
-//     assert_eq!(result, RevealMinerResult::Fail);
-
-//     let logs = get_logs();
-//     assert_eq!(logs.len(), 1);
-
-//     assert_eq!(logs[0], "Answer don't match");
-// }
+}

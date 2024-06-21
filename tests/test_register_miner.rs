@@ -1,4 +1,5 @@
 use near_sdk::NearToken;
+use serde_json::json;
 
 use common::constants::{MINER_1, MINER_2};
 use common::environment::Environment;
@@ -21,7 +22,7 @@ fn test_register_miner() {
     let result_1 = contract.register_miner();
 
     assert_eq!(result_1, RegisterMinerResult::Success);
-    assert_eq!(contract.is_miner_registered(miner_1), true);
+    assert!(contract.is_miner_registered(miner_1));
 
     assert_log("register_miner", vec![("miner", MINER_1)]);
 }
@@ -37,7 +38,7 @@ fn test_register_multiple_miners() {
     let result_1 = contract.register_miner();
 
     assert_eq!(result_1, RegisterMinerResult::Success);
-    assert_eq!(contract.is_miner_registered(miner_1), true);
+    assert!(contract.is_miner_registered(miner_1));
 
     assert_log("register_miner", vec![("miner", MINER_1)]);
 
@@ -49,7 +50,7 @@ fn test_register_multiple_miners() {
     let result_2 = contract.register_miner();
 
     assert_eq!(result_2, RegisterMinerResult::Success);
-    assert_eq!(contract.is_miner_registered(miner_2), true);
+    assert!(contract.is_miner_registered(miner_2));
 
     assert_log("register_miner", vec![("miner", MINER_2)]);
 }
@@ -58,7 +59,7 @@ fn test_register_multiple_miners() {
 fn test_register_miner_when_is_registered_returns_already_registered() {
     let miner_1 = get_default_miner_account();
 
-    Environment::with_account(miner_1.clone()).create();
+    Environment::with_account(miner_1).create();
 
     let mut contract = Contract::new();
 
@@ -71,7 +72,7 @@ fn test_register_miner_when_is_registered_returns_already_registered() {
     assert_logs(vec![
         Log::Event {
             event_name: "register_miner".to_string(),
-            data: vec![("miner", MINER_1)],
+            data: vec![("miner", json![MINER_1])],
         },
         Log::Message("Attempted to register an already registered miner: miner1.near".to_string()),
     ]);
@@ -83,7 +84,7 @@ fn test_register_miner_when_deposit_is_less_min_stake() {
     let miner_1 = get_default_miner_account();
     let custom_deposit = NearToken::from_yoctonear(10u128.pow(23));
 
-    Environment::with_account(miner_1.clone()).with_attached_deposit(custom_deposit).create();
+    Environment::with_account(miner_1).with_attached_deposit(custom_deposit).create();
 
     let mut contract = Contract::new();
 
@@ -100,7 +101,7 @@ fn test_is_miner_registered() {
 
     contract.register_miner();
 
-    assert_eq!(contract.is_miner_registered(miner_1), true);
+    assert!(contract.is_miner_registered(miner_1));
 }
 
 #[test]
@@ -109,5 +110,5 @@ fn test_is_miner_registered_when_not_registered() {
 
     let miner_1: near_sdk::AccountId = get_default_miner_account();
 
-    assert_eq!(contract.is_miner_registered(miner_1), false);
+    assert!(!contract.is_miner_registered(miner_1));
 }

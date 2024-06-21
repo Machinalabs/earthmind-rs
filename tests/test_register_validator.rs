@@ -1,98 +1,112 @@
-// use crate::common::utils::{generate_validator_answer, get_context};
-// use earthmind_rs::Contract;
-// use earthmind_rs::{
-//     CommitMinerResult, CommitValidatorResult, RegisterMinerResult, RegisterRequestResult, RegisterValidatorResult, RevealMinerResult, RevealValidatorResult,
-// };
-// use near_sdk::{test_utils::get_logs, testing_env, AccountId, NearToken};
+use near_sdk::{AccountId, NearToken};
+use serde_json::json;
 
-// #[test]
-// fn test_register_validator() {
-//     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(25)));
-//     testing_env!(context.build());
+use common::constants::{VALIDATOR_1, VALIDATOR_2};
+use common::environment::Environment;
+use common::types::Log;
+use common::utils::{assert_log, assert_logs, get_account_for_validator, get_default_validator_account};
 
-//     let mut contract = Contract::new();
+use earthmind_rs::Contract;
+use earthmind_rs::RegisterValidatorResult;
 
-//     let result_1 = contract.register_validator();
-//     assert_eq!(result_1, RegisterValidatorResult::Success);
+pub mod common;
 
-//     let validator_1: AccountId = "hassel.near".parse().unwrap();
-//     assert!(contract.is_validator_registered(validator_1));
+#[test]
+fn test_register_validator() {
+    let validator = get_default_validator_account();
+    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
 
-//     let logs = get_logs();
-//     assert_eq!(logs.len(), 1);
-//     assert_eq!(
-//         logs[0],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_validator","data":[{"validator":"hassel.near"}]}"#
-//     );
+    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
 
-//     let context = get_context("edson.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(25)));
-//     testing_env!(context.build());
+    let mut contract = Contract::new();
 
-//     let result2 = contract.register_validator();
-//     assert_eq!(result2, RegisterValidatorResult::Success);
+    let result_1 = contract.register_validator();
+    assert_eq!(result_1, RegisterValidatorResult::Success);
+    assert!(contract.is_validator_registered(validator));
 
-//     let validator_2: AccountId = "edson.near".parse().unwrap();
-//     assert!(contract.is_validator_registered(validator_2));
+    assert_log("register_validator", vec![("validator", VALIDATOR_1)]);
+}
 
-//     let logs = get_logs();
-//     assert_eq!(logs.len(), 1);
-//     assert_eq!(
-//         logs[0],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_validator","data":[{"validator":"edson.near"}]}"#
-//     );
-// }
+#[test]
+fn test_register_multiple_validators() {
+    // register validator 1
+    let validator = get_default_validator_account();
+    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
 
-// #[test]
-// fn test_register_validator_when_is_registered_returns_already_registered() {
-//     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(25)));
-//     testing_env!(context.build());
+    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
 
-//     let mut contract = Contract::new();
+    let mut contract = Contract::new();
 
-//     contract.register_validator();
+    let result_1 = contract.register_validator();
+    assert_eq!(result_1, RegisterValidatorResult::Success);
+    assert!(contract.is_validator_registered(validator));
 
-//     let result = contract.register_validator();
+    assert_log("register_validator", vec![("validator", VALIDATOR_1)]);
 
-//     assert_eq!(result, RegisterValidatorResult::AlreadyRegistered);
+    //register validator 2
+    let validator = get_account_for_validator(VALIDATOR_2);
+    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
 
-//     let logs = get_logs();
+    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
 
-//     assert_eq!(logs.len(), 2);
+    let result_2 = contract.register_validator();
+    assert_eq!(result_2, RegisterValidatorResult::Success);
+    assert!(contract.is_validator_registered(validator));
 
-//     assert_eq!(
-//         logs[0],
-//         r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_validator","data":[{"validator":"hassel.near"}]}"#
-//     );
-//     assert_eq!(logs[1], "Attempted to register an already registered validator: hassel.near");
-// }
+    assert_log("register_validator", vec![("validator", VALIDATOR_2)]);
+}
 
-// #[test]
-// #[should_panic]
-// fn test_register_validator_when_deposit_is_less_min_stake() {
-//     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(23)));
-//     testing_env!(context.build());
+#[test]
+fn test_register_validator_when_is_registered_returns_already_registered() {
+    let validator = get_default_validator_account();
+    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
 
-//     let mut contract = Contract::new();
+    Environment::with_account(validator).with_attached_deposit(custom_deposit).create();
 
-//     contract.register_validator();
-// }
+    let mut contract = Contract::new();
 
-// #[test]
-// fn test_is_validator_registered() {
-//     let context = get_context("hassel.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(25)));
-//     testing_env!(context.build());
+    contract.register_validator();
 
-//     let mut contract = Contract::new();
-//     contract.register_validator();
+    let result = contract.register_validator();
+    assert_eq!(result, RegisterValidatorResult::AlreadyRegistered);
 
-//     let validator: AccountId = "hassel.near".parse().unwrap();
-//     assert!(contract.is_validator_registered(validator));
-// }
+    assert_logs(vec![
+        Log::Event {
+            event_name: "register_validator".to_string(),
+            data: vec![("validator", json![VALIDATOR_1])],
+        },
+        Log::Message("Attempted to register an already registered validator: validator1.near".to_string()),
+    ]);
+}
 
-// #[test]
-// fn test_is_validator_registered_when_not_registered() {
-//     let contract = Contract::new();
-//     let validator: AccountId = "hassel.near".parse().unwrap();
+#[test]
+#[should_panic]
+fn test_register_validator_when_deposit_is_less_min_stake() {
+    let validator = get_default_validator_account();
 
-//     assert!(!contract.is_validator_registered(validator));
-// }
+    Environment::with_account(validator).create();
+
+    let mut contract = Contract::new();
+
+    contract.register_validator();
+}
+
+#[test]
+fn test_is_validator_registered() {
+    let validator = get_default_validator_account();
+    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
+
+    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
+    let mut contract = Contract::new();
+    contract.register_validator();
+
+    assert!(contract.is_validator_registered(validator));
+}
+
+#[test]
+fn test_is_validator_registered_when_not_registered() {
+    let contract = Contract::new();
+    let validator: AccountId = get_default_validator_account();
+
+    assert!(!contract.is_validator_registered(validator));
+}
