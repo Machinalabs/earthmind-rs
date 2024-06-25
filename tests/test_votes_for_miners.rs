@@ -314,10 +314,6 @@ fn test_get_top_10_voters() {
 
     assert_logs(vec![Log::Event {
         event_name: "topten_miners".to_string(),
-        data: vec![
-            ("request_id", json![DEFAULT_REQUEST_ID]),
-            ("topten", json![top_ten]),
-        ],
+        data: vec![("request_id", json![DEFAULT_REQUEST_ID]), ("topten", json![top_ten])],
     }]);
-   
 }

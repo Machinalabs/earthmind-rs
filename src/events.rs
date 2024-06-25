@@ -88,5 +88,5 @@ pub struct RevealValidatorLog {
 #[serde(crate = "near_sdk::serde")]
 pub struct ToptenMinersLog {
     pub request_id: String,
-    pub topten: Vec<(AccountId, i32)> ,
+    pub topten: Vec<(AccountId, i32)>,
 }

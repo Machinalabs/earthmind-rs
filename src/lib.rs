@@ -91,25 +91,17 @@ impl Contract {
         self.validators.contains_key(&validator_id)
     }
 
-    fn is_user_registered(&self, account_id: AccountId) -> bool{
-
-        if !self.is_validator_registered(account_id.clone()){
-            if !self.is_miner_registered(account_id) {
-                return false;
-            } else {
-                return true;
-            }
-        } else {
-            return true;
-        }
+    fn is_user_registered(&self, account_id: AccountId) -> bool {
+        self.is_validator_registered(account_id.clone()) || self.is_miner_registered(account_id)
     }
+
     pub fn request_governance_decision(&mut self, message: String) -> RegisterRequestResult {
         let new_request_id = env::keccak256(message.as_bytes());
         let new_request_id_hex = hex::encode(new_request_id);
         let user = env::predecessor_account_id();
 
         //@dev verify that user is registerd as miner or validator
-        if !self.is_user_registered(user.clone()){
+        if !self.is_user_registered(user.clone()) {
             panic!("Account unregistered: {}", user);
         }
 
@@ -479,7 +471,10 @@ impl Contract {
         let top_ten_log = EventLog {
             standard: "emip001".to_string(),
             version: "1.0.0".to_string(),
-            event: EventLogVariant::ToptenMiners(vec![ToptenMinersLog {request_id, topten: top_ten.clone() }]),
+            event: EventLogVariant::ToptenMiners(vec![ToptenMinersLog {
+                request_id,
+                topten: top_ten.clone(),
+            }]),
         };
         env::log_str(&top_ten_log.to_string());
         top_ten
@@ -495,7 +490,7 @@ mod test {
         test_utils::{get_logs, VMContextBuilder},
         testing_env, AccountId, NearToken,
     };
-    
+
     fn get_context(predecessor_account_id: AccountId, block_timestamp: u64, attached_deposit: NearToken) -> VMContextBuilder {
         let mut builder = VMContextBuilder::new();
         builder
@@ -527,7 +522,8 @@ mod test {
             logs[0],
             r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_miner","data":[{"miner":"miner1.near"}]}"#
         );
-        assert_eq!(logs[1],
+        assert_eq!(
+            logs[1],
             r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#
         );
     }
@@ -554,7 +550,8 @@ mod test {
             logs[0],
             r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_miner","data":[{"miner":"miner1.near"}]}"#
         );
-        assert_eq!(logs[1],
+        assert_eq!(
+            logs[1],
             r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#
         );
 
