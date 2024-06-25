@@ -36,6 +36,22 @@ pub fn generate_validator_answer() -> Vec<AccountId> {
     value
 }
 
+pub fn group_registered_miners() -> Vec<AccountId> {
+    let value = vec![
+        "miner1.near".parse().unwrap(),
+        "miner2.near".parse().unwrap(),
+        "miner3.near".parse().unwrap(),
+        "miner4.near".parse().unwrap(),
+        "miner5.near".parse().unwrap(),
+        "miner6.near".parse().unwrap(),
+        "miner7.near".parse().unwrap(),
+        "miner8.near".parse().unwrap(),
+        "miner9.near".parse().unwrap(),
+        "miner10.near".parse().unwrap(),
+    ];
+    value
+}
+
 pub fn assert_log(event_name: &str, data: Vec<(&str, &str)>) {
     let logs = get_logs();
     assert_eq!(logs.len(), 1);
@@ -69,7 +85,6 @@ pub fn assert_logs(expected_logs: Vec<Log>) {
             Log::Event { event_name, data } => {
                 let mut data_map = serde_json::Map::new();
                 for (key, value) in data {
-                    //data_map.insert(key.to_string(), json!(value));
                     data_map.insert(key.to_string(), value.clone());
                 }
 

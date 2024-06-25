@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::store::LookupMap;
 use near_sdk::{env, log, near_bindgen, require, AccountId, PanicOnDefault};
@@ -170,7 +172,7 @@ impl Contract {
         let concatenated_answer = format!("{}{}{}{}", request_id, miner, answer, message);
         let value = env::keccak256(concatenated_answer.as_bytes());
 
-        // Return the hash of the answer
+        //@dev Return the hash of the answer
         hex::encode(value)
     }
 
@@ -233,7 +235,7 @@ impl Contract {
 
         let value = env::keccak256(&concatenated_answer);
 
-        // Return the hash of the answer
+        //@dev Return the hash of the answer
         hex::encode(value)
     }
 
@@ -348,6 +350,29 @@ impl Contract {
             return RevealValidatorResult::Fail;
         }
 
+        //@dev verify that the answer vector have 10 elements
+        if answer.len() != 10 {
+            log!("Invalid answer");
+            return RevealValidatorResult::Fail;
+        }
+
+        //@dev verify that the answer don't have repeated account
+        let mut set = HashSet::new();
+        for accounts in answer.clone() {
+            if !set.insert(accounts.clone()) {
+                log!("Repeated account: {}", accounts);
+                return RevealValidatorResult::Fail;
+            }
+        }
+
+        //@dev verify that every unique account is registered as miner
+        for accounts in answer.clone() {
+            if !self.miners.contains_key(&accounts) {
+                log!("Account not registered as miner: {}", accounts);
+                return RevealValidatorResult::Fail;
+            }
+        }
+
         if self.get_request_by_id_mut(request_id.clone()).is_none() {
             log!("Request is not registered: {}", request_id);
             return RevealValidatorResult::Fail;
@@ -370,11 +395,6 @@ impl Contract {
 
         if save_proposal.is_revealed {
             log!("Proposal already revealed");
-            return RevealValidatorResult::Fail;
-        }
-
-        if answer.len() != 10 {
-            log!("Invalid answer");
             return RevealValidatorResult::Fail;
         }
 
@@ -656,5 +676,37 @@ mod test {
         let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae727";
 
         assert!(contract.get_request_by_id_mut(request_id.to_string()).is_none());
+    }
+
+    #[test]
+    fn test_is_user_registered_when_already_registered_as_miner() {
+        let context = get_context("miner1.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+        contract.register_miner();
+
+        assert!(contract.is_user_registered("miner1.near".parse().unwrap()));
+    }
+
+    #[test]
+    fn test_is_user_registered_when_already_registered_as_validator() {
+        let context = get_context("validator1.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
+        testing_env!(context.build());
+
+        let mut contract = Contract::new();
+        contract.register_miner();
+
+        assert!(contract.is_user_registered("validator1.near".parse().unwrap()));
+    }
+
+    #[test]
+    fn test_is_user_registered_when_not_registered() {
+        let context = get_context("validator1.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
+        testing_env!(context.build());
+
+        let contract = Contract::new();
+
+        assert!(!contract.is_user_registered("validator1.near".parse().unwrap()));
     }
 }

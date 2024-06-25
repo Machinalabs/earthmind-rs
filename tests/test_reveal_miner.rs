@@ -97,9 +97,6 @@ fn test_reveal_by_miner_when_miner_is_not_registered() {
     assert_logs(vec![Log::Message("Miner not registered: miner2.near".to_string())]);
 }
 
-// @dev possibly this test is not necessary because if the request don't exist, miner is not able to commit
-// This test is about the miner have a mistake with the request id and cannot reveal.
-// Works with the original idea.
 #[test]
 fn test_reveal_by_miner_when_request_is_not_registered() {
     let miner_1 = get_default_miner_account();
