@@ -49,6 +49,7 @@ fn test_commit_by_validator_when_validator_and_request_exist() {
 }
 
 #[test]
+#[should_panic]
 fn test_commit_by_validator_when_validator_dont_registered_and_request_exist() {
     let validator = get_default_validator_account();
     let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));

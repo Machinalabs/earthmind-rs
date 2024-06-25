@@ -1,3 +1,4 @@
+use common::constants::DEFAULT_MESSAGE_TO_REQUEST;
 use near_workspaces::AccountId;
 use serde_json::json;
 
@@ -16,18 +17,21 @@ pub mod common;
 fn test_request_governance_decision_when_is_registered_returns_already_registered() {
     let miner = get_default_miner_account();
 
-    Environment::with_account(miner).create();
+    Environment::with_account(miner.clone()).create();
 
     let mut contract = Contract::new();
+    contract.register_miner();
+    contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
-    let message = "Should we add this new NFT to our protocol?";
-    contract.request_governance_decision(message.to_string());
-
-    let result = contract.request_governance_decision(message.to_string());
+    let result = contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     assert_eq!(result, RegisterRequestResult::AlreadyRegistered);
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_miner".to_string(),
+            data: vec![("miner", json![miner])],
+        },
         Log::Event {
             event_name: "register_request".to_string(),
             data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
@@ -45,9 +49,8 @@ fn test_hash_miner_answer() {
     Environment::with_account(miner).create();
 
     let mut contract = Contract::new();
-
-    let message = "Should we add this new NFT to our protocol?";
-    contract.request_governance_decision(message.to_string());
+    contract.register_miner();
+    contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     let request_id = DEFAULT_REQUEST_ID.to_string();
     let answer = true;
@@ -65,9 +68,9 @@ fn test_hash_validator_answer() {
 
     Environment::with_account(validator).create();
     let mut contract = Contract::new();
+    contract.register_miner();
 
-    let message = "Should we add this new NFT to our protocol?";
-    contract.request_governance_decision(message.to_string());
+    contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     let request_id = DEFAULT_REQUEST_ID.to_string();
     let answer = generate_validator_answer();

@@ -17,6 +17,7 @@ pub enum EventLogVariant {
     CommitValidator(Vec<CommitValidatorLog>),
     RevealMiner(Vec<RevealMinerLog>),
     RevealValidator(Vec<RevealValidatorLog>),
+    ToptenMiners(Vec<ToptenMinersLog>),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -81,4 +82,11 @@ pub struct RevealValidatorLog {
     pub request_id: String,
     pub answer: Vec<AccountId>,
     pub message: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(crate = "near_sdk::serde")]
+pub struct ToptenMinersLog {
+    pub request_id: String,
+    pub topten: Vec<(AccountId, i32)> ,
 }
