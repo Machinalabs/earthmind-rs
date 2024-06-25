@@ -1,8 +1,7 @@
-use std::collections::HashSet;
-
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::store::LookupMap;
 use near_sdk::{env, log, near_bindgen, require, AccountId, PanicOnDefault};
+use std::collections::HashSet;
 
 pub use crate::constants::*;
 pub use crate::events::*;
@@ -396,6 +395,26 @@ impl Contract {
         if save_proposal.is_revealed {
             log!("Proposal already revealed");
             return RevealValidatorResult::Fail;
+        }
+
+        // @dev verify that miners in the answer have a commit answer
+        for accounts in answer.clone() {
+            if !complete_request.miners_proposals.contains_key(&accounts) {
+                log!("Account not registered a commit: {}", accounts);
+                return RevealValidatorResult::Fail;
+            }
+        }
+
+        //@dev verify that the commit answer was revealed
+        for accounts in answer.clone() {
+            let miner_proposal = complete_request
+                .miners_proposals
+                .get(&accounts)
+                .map_or_else(|| panic!("proposal not found"), |proposal| proposal);
+
+            if !miner_proposal.is_revealed {
+                log!("Commit by miner not revealed: {}", accounts);
+            }
         }
 
         let mut concatenated_answer: Vec<u8> = Vec::new();

@@ -1,32 +1,23 @@
 use near_sdk::NearToken;
+use serde_json::json;
 
 use common::constants::{
-    COMMIT_VALIDATOR_TIME, DEFAULT_DEPOSIT, DEFAULT_MESSAGE_TO_REQUEST, DEFAULT_REQUEST_ID, DEFAULT_VALIDATOR_ANSWER, REVEAL_TOPTEN_TIME,
+    COMMIT_VALIDATOR_TIME, DEFAULT_DEPOSIT, DEFAULT_MESSAGE_TO_REQUEST, DEFAULT_REQUEST_ID, DEFAULT_VALIDATOR_ANSWER, REVEAL_MINER_TIME, REVEAL_TOPTEN_TIME,
     REVEAL_VALIDATOR_TIME, VALIDATOR_1, VALIDATOR_2, VALIDATOR_3,
 };
 use common::environment::Environment;
 use common::types::Log;
-use common::utils::{assert_logs, generate_validator_answer, get_account_for_validator, get_default_validator_account, group_registered_miners};
+use common::utils::{
+    assert_logs, default_miners_commit_answer, generate_validator_answer, get_account_for_validator, get_default_validator_account, group_registered_miners,
+};
 
-use earthmind_rs::{Contract, RevealValidatorResult};
+use earthmind_rs::{Contract, RevealMinerResult, RevealValidatorResult};
 
-use serde_json::json;
 pub mod common;
 
 #[test]
 fn test_votes_for_miner_using_one_validator() {
     let mut contract = Contract::new();
-
-    let registered_miners = group_registered_miners();
-
-    for miners in registered_miners {
-        Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
-        contract.register_miner();
-        assert_logs(vec![Log::Event {
-            event_name: "register_miner".to_string(),
-            data: vec![("miner", json![miners])],
-        }]);
-    }
 
     let validator = get_default_validator_account();
     let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
@@ -34,7 +25,6 @@ fn test_votes_for_miner_using_one_validator() {
     Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
 
     contract.register_validator();
-
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     assert_logs(vec![
@@ -47,6 +37,45 @@ fn test_votes_for_miner_using_one_validator() {
             data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
         },
     ]);
+
+    let registered_miners = group_registered_miners();
+    let default_answer_miners = default_miners_commit_answer();
+
+    for (index, miners) in registered_miners.clone().into_iter().enumerate() {
+        Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
+        contract.register_miner();
+        contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), default_answer_miners[index].clone());
+
+        assert_logs(vec![
+            Log::Event {
+                event_name: "register_miner".to_string(),
+                data: vec![("miner", json![miners])],
+            },
+            Log::Event {
+                event_name: "commit_miner".to_string(),
+                data: vec![
+                    ("request_id", json![DEFAULT_REQUEST_ID]),
+                    ("answer", json![default_answer_miners[index].clone()]),
+                ],
+            },
+        ]);
+    }
+
+    for miners in registered_miners {
+        Environment::with_account(miners.clone()).with_block_timestamp(REVEAL_MINER_TIME).create();
+        let answer = true;
+        let message = "It's a cool NFT";
+        let result = contract.reveal_by_miner(DEFAULT_REQUEST_ID.to_string(), answer, message.to_string());
+        assert_eq!(result, RevealMinerResult::Success);
+        assert_logs(vec![Log::Event {
+            event_name: "reveal_miner".to_string(),
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("answer", json![answer]),
+                ("message", json![message]),
+            ],
+        }]);
+    }
 
     Environment::with_account(validator.clone())
         .with_block_timestamp(COMMIT_VALIDATOR_TIME)
@@ -66,6 +95,14 @@ fn test_votes_for_miner_using_one_validator() {
     let result = contract.reveal_by_validator(DEFAULT_REQUEST_ID.to_string(), answer.clone(), message.clone());
 
     assert_eq!(result, RevealValidatorResult::Success);
+    assert_logs(vec![Log::Event {
+        event_name: "reveal_validator".to_string(),
+        data: vec![
+            ("request_id", json![DEFAULT_REQUEST_ID]),
+            ("answer", json![answer]),
+            ("message", json![message]),
+        ],
+    }]);
 
     contract.votes_for_miner(DEFAULT_REQUEST_ID.to_string(), "miner1.near".parse().unwrap());
 
@@ -85,18 +122,6 @@ fn test_votes_for_miner_using_one_validator() {
 #[test]
 fn test_vote_for_miners_with_multiple_validators() {
     let mut contract = Contract::new();
-
-    let registered_miners = group_registered_miners();
-
-    for miners in registered_miners {
-        Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
-        contract.register_miner();
-        assert_logs(vec![Log::Event {
-            event_name: "register_miner".to_string(),
-            data: vec![("miner", json![miners])],
-        }]);
-    }
-    //@dev First validator
     let validator_1 = get_default_validator_account();
     let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
 
@@ -117,6 +142,45 @@ fn test_vote_for_miners_with_multiple_validators() {
         },
     ]);
 
+    let registered_miners = group_registered_miners();
+    let default_answer_miners = default_miners_commit_answer();
+
+    for (index, miners) in registered_miners.clone().into_iter().enumerate() {
+        Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
+        contract.register_miner();
+        contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), default_answer_miners[index].clone());
+
+        assert_logs(vec![
+            Log::Event {
+                event_name: "register_miner".to_string(),
+                data: vec![("miner", json![miners])],
+            },
+            Log::Event {
+                event_name: "commit_miner".to_string(),
+                data: vec![
+                    ("request_id", json![DEFAULT_REQUEST_ID]),
+                    ("answer", json![default_answer_miners[index].clone()]),
+                ],
+            },
+        ]);
+    }
+
+    for miners in registered_miners {
+        Environment::with_account(miners.clone()).with_block_timestamp(REVEAL_MINER_TIME).create();
+        let answer = true;
+        let message = "It's a cool NFT";
+        let result = contract.reveal_by_miner(DEFAULT_REQUEST_ID.to_string(), answer, message.to_string());
+        assert_eq!(result, RevealMinerResult::Success);
+        assert_logs(vec![Log::Event {
+            event_name: "reveal_miner".to_string(),
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("answer", json![answer]),
+                ("message", json![message]),
+            ],
+        }]);
+    }
+    //@dev First validator
     Environment::with_account(validator_1.clone())
         .with_block_timestamp(COMMIT_VALIDATOR_TIME)
         .create();
@@ -202,19 +266,7 @@ fn test_vote_for_miners_with_multiple_validators() {
 fn test_get_top_10_voters() {
     let mut contract = Contract::new();
 
-    let registered_miners = group_registered_miners();
-
-    for miners in registered_miners {
-        Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
-        contract.register_miner();
-        assert_logs(vec![Log::Event {
-            event_name: "register_miner".to_string(),
-            data: vec![("miner", json![miners])],
-        }]);
-    }
-
     // @dev Register 3 validators
-
     let validator_1 = get_default_validator_account();
     let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
     Environment::with_account(validator_1.clone()).with_attached_deposit(custom_deposit).create();
@@ -253,6 +305,45 @@ fn test_get_top_10_voters() {
             data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
         },
     ]);
+
+    let registered_miners = group_registered_miners();
+    let default_answer_miners = default_miners_commit_answer();
+
+    for (index, miners) in registered_miners.clone().into_iter().enumerate() {
+        Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
+        contract.register_miner();
+        contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), default_answer_miners[index].clone());
+
+        assert_logs(vec![
+            Log::Event {
+                event_name: "register_miner".to_string(),
+                data: vec![("miner", json![miners])],
+            },
+            Log::Event {
+                event_name: "commit_miner".to_string(),
+                data: vec![
+                    ("request_id", json![DEFAULT_REQUEST_ID]),
+                    ("answer", json![default_answer_miners[index].clone()]),
+                ],
+            },
+        ]);
+    }
+
+    for miners in registered_miners {
+        Environment::with_account(miners.clone()).with_block_timestamp(REVEAL_MINER_TIME).create();
+        let answer = true;
+        let message = "It's a cool NFT";
+        let result = contract.reveal_by_miner(DEFAULT_REQUEST_ID.to_string(), answer, message.to_string());
+        assert_eq!(result, RevealMinerResult::Success);
+        assert_logs(vec![Log::Event {
+            event_name: "reveal_miner".to_string(),
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("answer", json![answer]),
+                ("message", json![message]),
+            ],
+        }]);
+    }
 
     // @dev Validators commit an answer
     Environment::with_account(validator_1.clone())

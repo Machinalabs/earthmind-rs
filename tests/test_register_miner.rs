@@ -6,8 +6,7 @@ use common::environment::Environment;
 use common::types::Log;
 use common::utils::{assert_log, assert_logs, get_account_for_miner, get_default_miner_account};
 
-use earthmind_rs::Contract;
-use earthmind_rs::RegisterMinerResult;
+use earthmind_rs::{Contract, RegisterMinerResult};
 
 pub mod common;
 

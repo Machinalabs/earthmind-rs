@@ -6,8 +6,7 @@ use common::environment::Environment;
 use common::types::Log;
 use common::utils::{assert_log, assert_logs, get_account_for_validator, get_default_validator_account};
 
-use earthmind_rs::Contract;
-use earthmind_rs::RegisterValidatorResult;
+use earthmind_rs::{Contract, RegisterValidatorResult};
 
 pub mod common;
 

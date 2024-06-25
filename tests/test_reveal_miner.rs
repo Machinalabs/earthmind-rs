@@ -6,6 +6,7 @@ use common::utils::{assert_logs, get_account_for_miner, get_default_miner_accoun
 use earthmind_rs::{Contract, RevealMinerResult};
 
 use serde_json::json;
+
 pub mod common;
 
 #[test]

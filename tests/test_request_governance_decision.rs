@@ -1,15 +1,12 @@
-use common::constants::DEFAULT_MESSAGE_TO_REQUEST;
 use near_workspaces::AccountId;
 use serde_json::json;
 
-use crate::common::utils::{assert_logs, generate_validator_answer, get_default_validator_account};
-use common::constants::DEFAULT_REQUEST_ID;
+use common::constants::{DEFAULT_MESSAGE_TO_REQUEST, DEFAULT_REQUEST_ID};
 use common::environment::Environment;
 use common::types::Log;
-use common::utils::get_default_miner_account;
+use common::utils::{assert_logs, generate_validator_answer, get_default_miner_account, get_default_validator_account};
 
-use earthmind_rs::Contract;
-use earthmind_rs::RegisterRequestResult;
+use earthmind_rs::{Contract, RegisterRequestResult};
 
 pub mod common;
 
