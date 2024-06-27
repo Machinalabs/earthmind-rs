@@ -5,6 +5,7 @@ use common::utils::{assert_logs, get_account_for_miner, get_default_miner_accoun
 
 use earthmind_rs::{Contract, RevealMinerResult};
 
+use near_sdk::NearToken;
 use serde_json::json;
 
 pub mod common;
@@ -12,9 +13,12 @@ pub mod common;
 #[test]
 fn test_reveal_by_miner() {
     let miner_1 = get_default_miner_account();
+    let deposit = NearToken::from_near(15);
 
-    Environment::with_account(miner_1.clone()).create();
+    Environment::with_account(miner_1.clone()).with_attached_deposit(deposit).create();
     let mut contract = Contract::new();
+
+    contract.register_protocol();
 
     contract.register_miner();
 
@@ -23,6 +27,10 @@ fn test_reveal_by_miner() {
     contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![MINER_1])],
+        },
         Log::Event {
             event_name: "register_miner".to_string(),
             data: vec![("miner", json![MINER_1])],
@@ -59,11 +67,13 @@ fn test_reveal_by_miner() {
 #[test]
 fn test_reveal_by_miner_when_miner_is_not_registered() {
     let miner_1 = get_default_miner_account();
+    let deposit = NearToken::from_near(15);
 
-    Environment::with_account(miner_1).create();
+    Environment::with_account(miner_1).with_attached_deposit(deposit).create();
     let mut contract = Contract::new();
 
     // @dev use a register miner to generate a request
+    contract.register_protocol();
     contract.register_miner();
 
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
@@ -71,6 +81,10 @@ fn test_reveal_by_miner_when_miner_is_not_registered() {
     contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![MINER_1])],
+        },
         Log::Event {
             event_name: "register_miner".to_string(),
             data: vec![("miner", json![MINER_1])],
@@ -101,11 +115,12 @@ fn test_reveal_by_miner_when_miner_is_not_registered() {
 #[test]
 fn test_reveal_by_miner_when_request_is_not_registered() {
     let miner_1 = get_default_miner_account();
+    let deposit = NearToken::from_near(15);
 
-    Environment::with_account(miner_1).create();
+    Environment::with_account(miner_1).with_attached_deposit(deposit).create();
 
     let mut contract = Contract::new();
-
+    contract.register_protocol();
     contract.register_miner();
 
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
@@ -121,6 +136,10 @@ fn test_reveal_by_miner_when_request_is_not_registered() {
     assert_eq!(result, RevealMinerResult::Fail);
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![MINER_1])],
+        },
         Log::Event {
             event_name: "register_miner".to_string(),
             data: vec![("miner", json![MINER_1])],
@@ -140,17 +159,23 @@ fn test_reveal_by_miner_when_request_is_not_registered() {
 #[test]
 fn test_reveal_by_miner_when_proposal_is_already_reveal() {
     let miner_1 = get_default_miner_account();
+    let deposit =  NearToken::from_near(15);
 
-    Environment::with_account(miner_1.clone()).create();
+    Environment::with_account(miner_1.clone()).with_attached_deposit(deposit).create();
 
     let mut contract = Contract::new();
 
+    contract.register_protocol();
     contract.register_miner();
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![MINER_1])],
+        },
         Log::Event {
             event_name: "register_miner".to_string(),
             data: vec![("miner", json![MINER_1])],
@@ -192,10 +217,13 @@ fn test_reveal_by_miner_when_proposal_is_already_reveal() {
 #[test]
 fn test_reveal_by_miner_when_answer_not_equal() {
     let miner_1 = get_default_miner_account();
+    let deposit = NearToken::from_near(15);
 
-    Environment::with_account(miner_1.clone()).create();
+    Environment::with_account(miner_1.clone()).with_attached_deposit(deposit).create();
 
     let mut contract = Contract::new();
+
+    contract.register_protocol();
 
     contract.register_miner();
 
@@ -203,7 +231,11 @@ fn test_reveal_by_miner_when_answer_not_equal() {
 
     contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
 
-    assert_logs(vec![
+     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![MINER_1])],
+        },
         Log::Event {
             event_name: "register_miner".to_string(),
             data: vec![("miner", json![MINER_1])],

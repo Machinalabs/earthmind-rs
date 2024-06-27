@@ -10,6 +10,7 @@ type Hash = String;
 #[serde(crate = "near_sdk::serde")]
 #[non_exhaustive]
 pub enum EventLogVariant {
+    RegisterProtocol(Vec<RegisterProtocolLog>),
     RegisterMiner(Vec<RegisterMinerLog>),
     RegisterValidator(Vec<RegisterValidatorLog>),
     RegisterRequest(Vec<RegisterRequestLog>),
@@ -34,6 +35,12 @@ impl fmt::Display for EventLog {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_fmt(format_args!("EVENT_JSON:{}", &serde_json::to_string(self).map_err(|_| fmt::Error)?))
     }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(crate = "near_sdk::serde")]
+pub struct RegisterProtocolLog {
+    pub account: AccountId,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

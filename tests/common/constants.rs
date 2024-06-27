@@ -1,14 +1,17 @@
 use near_sdk::NearToken;
 
+pub const ACCOUNT_1: &str = "nearaccount1.near";
+pub const ACCOUNT_2: &str = "nearaccount2.near";
 pub const MINER_1: &str = "miner1.near";
 pub const MINER_2: &str = "miner2.near";
 pub const VALIDATOR_1: &str = "validator1.near";
 pub const VALIDATOR_2: &str = "validator2.near";
 pub const VALIDATOR_3: &str = "validator3.near";
+pub const DEFAULT_PROTOCOL_ACCOUNT_ID: &str = ACCOUNT_1;
 pub const DEFAULT_MINER_ACCOUNT_ID: &str = MINER_1;
 pub const DEFAULT_VALIDATOR_ACCOUNT_ID: &str = VALIDATOR_1;
 pub const DEFAULT_TIMESTAMP: u64 = 100_000_000_000;
-pub const DEFAULT_DEPOSIT: NearToken = NearToken::from_yoctonear(10u128.pow(24));
+pub const DEFAULT_DEPOSIT: NearToken = NearToken::from_near(15);
 pub const DEFAULT_MESSAGE_TO_REQUEST: &str = "Should we add this new NFT to our protocol?";
 pub const DEFAULT_REQUEST_ID: &str = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726";
 pub const DEFAULT_MINER_ANSWER: &str = "83a297c4156180a209ab3b4be1f9bb55fe692dd02826a0265431d60c6e2ac871";

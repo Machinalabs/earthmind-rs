@@ -1,9 +1,17 @@
 use super::{
-    constants::{DEFAULT_MINER_ACCOUNT_ID, DEFAULT_VALIDATOR_ACCOUNT_ID},
+    constants::{DEFAULT_MINER_ACCOUNT_ID, DEFAULT_PROTOCOL_ACCOUNT_ID, DEFAULT_VALIDATOR_ACCOUNT_ID},
     types::Log,
 };
 use near_sdk::{test_utils::get_logs, AccountId};
 use serde_json::{json, Value};
+
+pub fn get_account_for_protocol(account: &str) -> AccountId {
+    account.parse().unwrap()
+}
+
+pub fn get_default_protocol_account() -> AccountId {
+    DEFAULT_PROTOCOL_ACCOUNT_ID.parse().unwrap()
+}
 
 pub fn get_account_for_miner(miner: &str) -> AccountId {
     miner.parse().unwrap()

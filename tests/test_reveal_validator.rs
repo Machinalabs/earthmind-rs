@@ -20,14 +20,18 @@ fn test_reveal_by_validator() {
     let mut contract = Contract::new();
 
     let validator = get_default_validator_account();
-    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
+    let deposit = NearToken::from_yoctonear(10u128.pow(25));
 
-    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
-
+    Environment::with_account(validator.clone()).with_attached_deposit(deposit).create();
+    contract.register_protocol();
     contract.register_validator();
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![VALIDATOR_1])],
+        },
         Log::Event {
             event_name: "register_validator".to_string(),
             data: vec![("validator", json![VALIDATOR_1])],
@@ -40,13 +44,19 @@ fn test_reveal_by_validator() {
 
     let registered_miners = group_registered_miners();
     let default_answer_miners = default_miners_commit_answer();
+    let deposit = NearToken::from_near(15);
 
     for (index, miners) in registered_miners.clone().into_iter().enumerate() {
-        Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
+        Environment::with_account(miners.clone()).with_attached_deposit(deposit).create();
+        contract.register_protocol();
         contract.register_miner();
         contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), default_answer_miners[index].clone());
 
         assert_logs(vec![
+            Log::Event {
+                event_name: "register_protocol".to_string(),
+                data: vec![("account", json![miners])],
+            },
             Log::Event {
                 event_name: "register_miner".to_string(),
                 data: vec![("miner", json![miners])],
@@ -122,9 +132,9 @@ fn test_reveal_by_validator_when_miner_dont_have_a_commit_answer() {
     }
 
     let validator = get_default_validator_account();
-    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
+    let deposit = NearToken::from_yoctonear(10u128.pow(25));
 
-    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
+    Environment::with_account(validator.clone()).with_attached_deposit(deposit).create();
 
     contract.register_validator();
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
@@ -174,9 +184,9 @@ fn test_reveal_by_validator_when_miner_have_a_commit_answer_but_not_revealed() {
     let mut contract = Contract::new();
 
     let validator = get_default_validator_account();
-    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
+    let deposit = NearToken::from_yoctonear(10u128.pow(25));
 
-    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
+    Environment::with_account(validator.clone()).with_attached_deposit(deposit).create();
 
     contract.register_validator();
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
@@ -266,17 +276,21 @@ fn test_reveal_by_validator_when_miner_have_a_commit_answer_but_not_revealed() {
 #[test]
 fn test_reveal_by_validator_when_validator_is_not_registered() {
     let validator = get_default_validator_account();
-    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
+    let deposit = NearToken::from_yoctonear(10u128.pow(25));
 
-    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
+    Environment::with_account(validator.clone()).with_attached_deposit(deposit).create();
 
     let mut contract = Contract::new();
-
+    contract.register_protocol();
     contract.register_validator();
 
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![VALIDATOR_1])],
+        },
         Log::Event {
             event_name: "register_validator".to_string(),
             data: vec![("validator", json![VALIDATOR_1])],
@@ -318,23 +332,31 @@ fn test_reveal_by_validator_when_request_is_not_registered() {
 
     for miners in registered_miners {
         Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
+        contract.register_protocol();
         contract.register_miner();
         assert_logs(vec![Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![miners])],
+        }, Log::Event {
             event_name: "register_miner".to_string(),
             data: vec![("miner", json![miners])],
         }]);
     }
 
     let validator = get_default_validator_account();
-    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
+    let deposit = NearToken::from_yoctonear(10u128.pow(25));
 
-    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
-
+    Environment::with_account(validator.clone()).with_attached_deposit(deposit).create();
+    contract.register_protocol();
     contract.register_validator();
 
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![VALIDATOR_1])],
+        },
         Log::Event {
             event_name: "register_validator".to_string(),
             data: vec![("validator", json![VALIDATOR_1])],
@@ -376,14 +398,18 @@ fn test_reveal_by_validator_when_proposal_is_already_reveal() {
     let mut contract = Contract::new();
 
     let validator = get_default_validator_account();
-    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
+    let deposit = NearToken::from_yoctonear(10u128.pow(25));
 
-    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
-
+    Environment::with_account(validator.clone()).with_attached_deposit(deposit).create();
+    contract.register_protocol();
     contract.register_validator();
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![VALIDATOR_1])],
+        },
         Log::Event {
             event_name: "register_validator".to_string(),
             data: vec![("validator", json![VALIDATOR_1])],
@@ -399,10 +425,15 @@ fn test_reveal_by_validator_when_proposal_is_already_reveal() {
 
     for (index, miners) in registered_miners.clone().into_iter().enumerate() {
         Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
+        contract.register_protocol();
         contract.register_miner();
         contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), default_answer_miners[index].clone());
 
         assert_logs(vec![
+            Log::Event {
+                event_name: "register_protocol".to_string(),
+                data: vec![("account", json![miners])],
+            },
             Log::Event {
                 event_name: "register_miner".to_string(),
                 data: vec![("miner", json![miners])],
@@ -472,14 +503,18 @@ fn test_reveal_by_validator_when_answer_not_equal() {
     let mut contract = Contract::new();
 
     let validator = get_default_validator_account();
-    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
+    let deposit = NearToken::from_yoctonear(10u128.pow(25));
 
-    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
-
+    Environment::with_account(validator.clone()).with_attached_deposit(deposit).create();
+    contract.register_protocol();
     contract.register_validator();
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![VALIDATOR_1])],
+        },
         Log::Event {
             event_name: "register_validator".to_string(),
             data: vec![("validator", json![VALIDATOR_1])],
@@ -495,10 +530,15 @@ fn test_reveal_by_validator_when_answer_not_equal() {
 
     for (index, miners) in registered_miners.clone().into_iter().enumerate() {
         Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
+        contract.register_protocol();
         contract.register_miner();
         contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), default_answer_miners[index].clone());
 
         assert_logs(vec![
+            Log::Event {
+                event_name: "register_protocol".to_string(),
+                data: vec![("account", json![miners])],
+            },
             Log::Event {
                 event_name: "register_miner".to_string(),
                 data: vec![("miner", json![miners])],
@@ -532,11 +572,16 @@ fn test_reveal_by_validator_when_answer_not_equal() {
     let extra_miner: AccountId = "miner11.near".parse().unwrap();
     let extra_miner_answer = "021af66ece15f4262f9c819d44a1a654ee0db7486360d574797f06bbe5d8f709".to_string();
     Environment::with_account(extra_miner.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
+    contract.register_protocol();
     contract.register_miner();
 
     contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), extra_miner_answer.clone());
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![extra_miner])],
+        },
         Log::Event {
             event_name: "register_miner".to_string(),
             data: vec![("miner", json![extra_miner])],
@@ -592,23 +637,31 @@ fn test_reveal_by_validator_when_vote_for_miner_not_registered() {
 
     for miners in registered_miners {
         Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
+        contract.register_protocol();
         contract.register_miner();
         assert_logs(vec![Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![miners])],
+        }, Log::Event {
             event_name: "register_miner".to_string(),
             data: vec![("miner", json![miners])],
         }]);
     }
 
     let validator = get_default_validator_account();
-    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
+    let deposit = NearToken::from_yoctonear(10u128.pow(25));
 
-    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
-
+    Environment::with_account(validator.clone()).with_attached_deposit(deposit).create();
+    contract.register_protocol();
     contract.register_validator();
 
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![VALIDATOR_1])],
+        },
         Log::Event {
             event_name: "register_validator".to_string(),
             data: vec![("validator", json![VALIDATOR_1])],
@@ -650,23 +703,32 @@ fn test_reveal_by_validator_when_miner_is_duplicated() {
 
     for miners in registered_miners {
         Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
+        contract.register_protocol();
         contract.register_miner();
         assert_logs(vec![Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![miners])],
+        }, Log::Event {
             event_name: "register_miner".to_string(),
             data: vec![("miner", json![miners])],
-        }]);
+        }, 
+        ]);
     }
 
     let validator = get_default_validator_account();
-    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
+    let deposit = NearToken::from_yoctonear(10u128.pow(25));
 
-    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
-
+    Environment::with_account(validator.clone()).with_attached_deposit(deposit).create();
+    contract.register_protocol();
     contract.register_validator();
 
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![VALIDATOR_1])],
+        },
         Log::Event {
             event_name: "register_validator".to_string(),
             data: vec![("validator", json![VALIDATOR_1])],

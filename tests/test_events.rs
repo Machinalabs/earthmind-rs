@@ -1,20 +1,38 @@
 use earthmind_rs::{
     CommitMinerLog, CommitValidatorLog, EventLog, EventLogVariant, RegisterMinerLog, RegisterRequestLog, RegisterValidatorLog, RevealMinerLog,
-    RevealValidatorLog,
+    RevealValidatorLog, RegisterProtocolLog, ToptenMinersLog
 };
 
 #[test]
+fn test_format_register_protocol() {
+    let expected = r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_protocol","data":[{"account":"miner1.near"},{"account":"validator1.near"}]}"#;
+    let log = EventLog {
+        standard: "emip001".to_string(),
+        version: "1.0.0".to_string(),
+        event: EventLogVariant::RegisterProtocol(vec![
+            RegisterProtocolLog {
+                account: "miner1.near".parse().unwrap(),
+            },
+            RegisterProtocolLog {
+                account: "validator1.near".parse().unwrap(),
+            },
+        ]),
+    };
+    assert_eq!(expected, log.to_string());
+}
+
+#[test]
 fn test_format_register_miner() {
-    let expected = r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_miner","data":[{"miner":"hassel.near"},{"miner":"edson.near"}]}"#;
+    let expected = r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_miner","data":[{"miner":"miner1.near"},{"miner":"miner2.near"}]}"#;
     let log = EventLog {
         standard: "emip001".to_string(),
         version: "1.0.0".to_string(),
         event: EventLogVariant::RegisterMiner(vec![
             RegisterMinerLog {
-                miner: "hassel.near".parse().unwrap(),
+                miner: "miner1.near".parse().unwrap(),
             },
             RegisterMinerLog {
-                miner: "edson.near".parse().unwrap(),
+                miner: "miner2.near".parse().unwrap(),
             },
         ]),
     };
@@ -24,16 +42,16 @@ fn test_format_register_miner() {
 #[test]
 fn test_format_register_validator() {
     let expected =
-        r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_validator","data":[{"validator":"hassel.near"},{"validator":"edson.near"}]}"#;
+        r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_validator","data":[{"validator":"validator1.near"},{"validator":"validator2.near"}]}"#;
     let log = EventLog {
         standard: "emip001".to_string(),
         version: "1.0.0".to_string(),
         event: EventLogVariant::RegisterValidator(vec![
             RegisterValidatorLog {
-                validator: "hassel.near".parse().unwrap(),
+                validator: "validator1.near".parse().unwrap(),
             },
             RegisterValidatorLog {
-                validator: "edson.near".parse().unwrap(),
+                validator: "validator2.near".parse().unwrap(),
             },
         ]),
     };
@@ -106,23 +124,23 @@ fn test_format_reveal_miner() {
 
 #[test]
 fn test_format_reveal_validator() {
-    let expected = r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"reveal_validator","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":["hassel.near","edson.near","anne.near","bob.near","alice.near","john.near","harry.near","scott.near","felix.near","margaret.near"],"message":"It's a cool NFT"}]}"#;
+    let expected = r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"reveal_validator","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","answer":["miner1.near","miner2.near","miner3.near","miner4.near","miner5.near","miner6.near","miner7.near","miner8.near","miner9.near","miner10.near"],"message":"It's a cool NFT"}]}"#;
     let log = EventLog {
         standard: "emip001".to_string(),
         version: "1.0.0".to_string(),
         event: EventLogVariant::RevealValidator(vec![RevealValidatorLog {
             request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string(),
             answer: vec![
-                "hassel.near".parse().unwrap(),
-                "edson.near".parse().unwrap(),
-                "anne.near".parse().unwrap(),
-                "bob.near".parse().unwrap(),
-                "alice.near".parse().unwrap(),
-                "john.near".parse().unwrap(),
-                "harry.near".parse().unwrap(),
-                "scott.near".parse().unwrap(),
-                "felix.near".parse().unwrap(),
-                "margaret.near".parse().unwrap(),
+                "miner1.near".parse().unwrap(),
+                "miner2.near".parse().unwrap(),
+                "miner3.near".parse().unwrap(),
+                "miner4.near".parse().unwrap(),
+                "miner5.near".parse().unwrap(),
+                "miner6.near".parse().unwrap(),
+                "miner7.near".parse().unwrap(),
+                "miner8.near".parse().unwrap(),
+                "miner9.near".parse().unwrap(),
+                "miner10.near".parse().unwrap(),
             ],
             message: "It's a cool NFT".to_string(),
         }]),
@@ -130,3 +148,32 @@ fn test_format_reveal_validator() {
 
     assert_eq!(expected, log.to_string());
 }
+
+#[test]
+fn test_format_topten_miners() {
+    let expected = r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"topten_miners","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","topten":[["miner1.near",3],["miner2.near",3],["miner3.near",3],["miner4.near",3],["miner5.near",3],["miner6.near",3],["miner7.near",3],["miner8.near",3],["miner9.near",3],["miner10.near",3]]}]}"#;
+    let log = EventLog {
+        standard: "emip001".to_string(),
+        version: "1.0.0".to_string(),
+        event: EventLogVariant::ToptenMiners(vec![
+            ToptenMinersLog {
+                request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string(),
+                topten: vec![
+                    ("miner1.near".parse().unwrap(),3),
+                    ("miner2.near".parse().unwrap(), 3),
+                    ("miner3.near".parse().unwrap(),3),
+                    ("miner4.near".parse().unwrap(),3),
+                    ("miner5.near".parse().unwrap(),3),
+                    ("miner6.near".parse().unwrap(),3),
+                    ("miner7.near".parse().unwrap(),3),
+                    ("miner8.near".parse().unwrap(),3),
+                    ("miner9.near".parse().unwrap(),3),
+                    ("miner10.near".parse().unwrap(),3),
+                ]
+            },
+        ]),
+    };
+    assert_eq!(expected, log.to_string());
+}
+
+

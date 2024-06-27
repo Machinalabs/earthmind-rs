@@ -8,9 +8,17 @@ pub type Stake = NearToken;
 
 #[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
 #[serde(crate = "near_sdk::serde")]
+pub enum RegisterProtocolResult {
+    Success,
+    AlreadyRegistered,
+}
+
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
+#[serde(crate = "near_sdk::serde")]
 pub enum RegisterMinerResult {
     Success,
     AlreadyRegistered,
+    NotRegisteredProtocol,
 }
 
 #[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
@@ -18,6 +26,7 @@ pub enum RegisterMinerResult {
 pub enum RegisterValidatorResult {
     Success,
     AlreadyRegistered,
+    NotRegisteredProtocol,
 }
 
 #[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
@@ -92,4 +101,23 @@ pub struct Request {
     pub votes_for_miners: LookupMap<AccountId, i32>,
     pub miner_keys: Vec<AccountId>,
     pub top_ten: Vec<(AccountId, i32)>,
+}
+
+#[derive(BorshDeserialize, BorshSerialize, Debug)]
+pub struct Protocol {
+    pub registered_accounts: LookupMap<AccountId, Stake>,
+}
+
+impl Default for Protocol {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Protocol {
+    pub fn new() -> Self {
+        Self {
+            registered_accounts: LookupMap::new(b"registered_account".to_vec()),
+        }
+    }
 }

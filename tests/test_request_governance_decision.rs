@@ -1,3 +1,4 @@
+use near_sdk::NearToken;
 use near_workspaces::AccountId;
 use serde_json::json;
 
@@ -13,10 +14,12 @@ pub mod common;
 #[test]
 fn test_request_governance_decision_when_is_registered_returns_already_registered() {
     let miner = get_default_miner_account();
+    let deposit =  NearToken::from_near(15);
 
-    Environment::with_account(miner.clone()).create();
+    Environment::with_account(miner.clone()).with_attached_deposit(deposit).create();
 
     let mut contract = Contract::new();
+    contract.register_protocol();
     contract.register_miner();
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
@@ -25,6 +28,10 @@ fn test_request_governance_decision_when_is_registered_returns_already_registere
     assert_eq!(result, RegisterRequestResult::AlreadyRegistered);
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![miner])],
+        },
         Log::Event {
             event_name: "register_miner".to_string(),
             data: vec![("miner", json![miner])],
@@ -42,10 +49,12 @@ fn test_request_governance_decision_when_is_registered_returns_already_registere
 #[test]
 fn test_hash_miner_answer() {
     let miner = get_default_miner_account();
+    let deposit = NearToken::from_near(15);
 
-    Environment::with_account(miner).create();
+    Environment::with_account(miner).with_attached_deposit(deposit).create();
 
     let mut contract = Contract::new();
+    contract.register_protocol();
     contract.register_miner();
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
@@ -62,9 +71,11 @@ fn test_hash_miner_answer() {
 #[test]
 fn test_hash_validator_answer() {
     let validator = get_default_validator_account();
+    let deposit = NearToken::from_near(15);
 
-    Environment::with_account(validator).create();
+    Environment::with_account(validator).with_attached_deposit(deposit).create();
     let mut contract = Contract::new();
+    contract.register_protocol();
     contract.register_miner();
 
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());

@@ -1,4 +1,5 @@
 use near_sdk::test_utils::get_logs;
+use near_sdk::NearToken;
 use serde_json::json;
 
 use common::constants::{DEFAULT_MESSAGE_TO_REQUEST, DEFAULT_MINER_ANSWER, DEFAULT_REQUEST_ID, MINER_1, MINER_2};
@@ -13,11 +14,11 @@ pub mod common;
 #[test]
 fn test_commit_by_miner_when_miner_and_request_exist() {
     let miner = get_default_miner_account();
-
-    Environment::with_account(miner).create();
+    let deposit = NearToken::from_near(5);
+    Environment::with_account(miner).with_attached_deposit(deposit).create();
 
     let mut contract = Contract::new();
-
+    contract.register_protocol();
     contract.register_miner();
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
@@ -26,6 +27,10 @@ fn test_commit_by_miner_when_miner_and_request_exist() {
     assert_eq!(result, CommitMinerResult::Success);
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![MINER_1])],
+        },
         Log::Event {
             event_name: "register_miner".to_string(),
             data: vec![("miner", json![MINER_1])],
@@ -44,10 +49,12 @@ fn test_commit_by_miner_when_miner_and_request_exist() {
 #[test]
 fn test_commit_by_miner_when_miner_dont_registered_and_request_exist() {
     let miner = get_default_miner_account();
+    let deposit =  NearToken::from_near(5);
 
-    Environment::with_account(miner).create();
+    Environment::with_account(miner).with_attached_deposit(deposit).create();
+
     let mut contract = Contract::new();
-
+    contract.register_protocol();
     contract.register_miner();
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
@@ -66,10 +73,12 @@ fn test_commit_by_miner_when_miner_dont_registered_and_request_exist() {
 #[test]
 fn test_commit_by_miner_when_miner_registered_and_request_dont_exist() {
     let miner = get_default_miner_account();
+    let deposit = NearToken::from_near(5);
 
-    Environment::with_account(miner).create();
+    Environment::with_account(miner).with_attached_deposit(deposit).create();
     let mut contract = Contract::new();
 
+    contract.register_protocol();
     contract.register_miner();
 
     let result = contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
@@ -77,6 +86,10 @@ fn test_commit_by_miner_when_miner_registered_and_request_dont_exist() {
     assert_eq!(result, CommitMinerResult::Fail);
 
     assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![MINER_1])],
+        },
         Log::Event {
             event_name: "register_miner".to_string(),
             data: vec![("miner", json![MINER_1])],
@@ -88,10 +101,12 @@ fn test_commit_by_miner_when_miner_registered_and_request_dont_exist() {
 #[test]
 fn test_commit_by_miner_when_miner_and_request_exist_and_commit_already() {
     let miner = get_default_miner_account();
+    let deposit = NearToken::from_near(5);
 
-    Environment::with_account(miner.clone()).create();
+    Environment::with_account(miner.clone()).with_attached_deposit(deposit).create();
     let mut contract = Contract::new();
 
+    contract.register_protocol();
     contract.register_miner();
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
     contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
