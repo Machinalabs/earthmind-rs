@@ -18,7 +18,7 @@ fn test_register_miner() {
     Environment::with_account(miner_1.clone()).with_attached_deposit(deposit).create();
 
     let mut contract = Contract::new();
-    
+
     contract.register_protocol();
     let result_1 = contract.register_miner();
 
@@ -88,7 +88,7 @@ fn test_register_multiple_miners() {
 #[test]
 fn test_register_miner_when_is_registered_returns_already_registered() {
     let miner_1 = get_default_miner_account();
-    let deposit= NearToken::from_near(10);
+    let deposit = NearToken::from_near(10);
 
     Environment::with_account(miner_1).with_attached_deposit(deposit).create();
 

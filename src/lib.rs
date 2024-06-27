@@ -616,10 +616,10 @@ mod test {
             r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#
         );
     }
-/*
+    /*
     #[test]
     fn test_multiple_request_governance_decision() {
-        
+
         let context = get_context("miner1.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
         testing_env!(context.build());
 

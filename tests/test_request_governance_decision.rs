@@ -14,7 +14,7 @@ pub mod common;
 #[test]
 fn test_request_governance_decision_when_is_registered_returns_already_registered() {
     let miner = get_default_miner_account();
-    let deposit =  NearToken::from_near(15);
+    let deposit = NearToken::from_near(15);
 
     Environment::with_account(miner.clone()).with_attached_deposit(deposit).create();
 

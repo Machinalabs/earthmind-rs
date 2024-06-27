@@ -49,7 +49,7 @@ fn test_commit_by_miner_when_miner_and_request_exist() {
 #[test]
 fn test_commit_by_miner_when_miner_dont_registered_and_request_exist() {
     let miner = get_default_miner_account();
-    let deposit =  NearToken::from_near(5);
+    let deposit = NearToken::from_near(5);
 
     Environment::with_account(miner).with_attached_deposit(deposit).create();
 

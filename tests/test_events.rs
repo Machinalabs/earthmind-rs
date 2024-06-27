@@ -1,11 +1,12 @@
 use earthmind_rs::{
-    CommitMinerLog, CommitValidatorLog, EventLog, EventLogVariant, RegisterMinerLog, RegisterRequestLog, RegisterValidatorLog, RevealMinerLog,
-    RevealValidatorLog, RegisterProtocolLog, ToptenMinersLog
+    CommitMinerLog, CommitValidatorLog, EventLog, EventLogVariant, RegisterMinerLog, RegisterProtocolLog, RegisterRequestLog, RegisterValidatorLog,
+    RevealMinerLog, RevealValidatorLog, ToptenMinersLog,
 };
 
 #[test]
 fn test_format_register_protocol() {
-    let expected = r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_protocol","data":[{"account":"miner1.near"},{"account":"validator1.near"}]}"#;
+    let expected =
+        r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_protocol","data":[{"account":"miner1.near"},{"account":"validator1.near"}]}"#;
     let log = EventLog {
         standard: "emip001".to_string(),
         version: "1.0.0".to_string(),
@@ -41,8 +42,7 @@ fn test_format_register_miner() {
 
 #[test]
 fn test_format_register_validator() {
-    let expected =
-        r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_validator","data":[{"validator":"validator1.near"},{"validator":"validator2.near"}]}"#;
+    let expected = r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_validator","data":[{"validator":"validator1.near"},{"validator":"validator2.near"}]}"#;
     let log = EventLog {
         standard: "emip001".to_string(),
         version: "1.0.0".to_string(),
@@ -155,25 +155,21 @@ fn test_format_topten_miners() {
     let log = EventLog {
         standard: "emip001".to_string(),
         version: "1.0.0".to_string(),
-        event: EventLogVariant::ToptenMiners(vec![
-            ToptenMinersLog {
-                request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string(),
-                topten: vec![
-                    ("miner1.near".parse().unwrap(),3),
-                    ("miner2.near".parse().unwrap(), 3),
-                    ("miner3.near".parse().unwrap(),3),
-                    ("miner4.near".parse().unwrap(),3),
-                    ("miner5.near".parse().unwrap(),3),
-                    ("miner6.near".parse().unwrap(),3),
-                    ("miner7.near".parse().unwrap(),3),
-                    ("miner8.near".parse().unwrap(),3),
-                    ("miner9.near".parse().unwrap(),3),
-                    ("miner10.near".parse().unwrap(),3),
-                ]
-            },
-        ]),
+        event: EventLogVariant::ToptenMiners(vec![ToptenMinersLog {
+            request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string(),
+            topten: vec![
+                ("miner1.near".parse().unwrap(), 3),
+                ("miner2.near".parse().unwrap(), 3),
+                ("miner3.near".parse().unwrap(), 3),
+                ("miner4.near".parse().unwrap(), 3),
+                ("miner5.near".parse().unwrap(), 3),
+                ("miner6.near".parse().unwrap(), 3),
+                ("miner7.near".parse().unwrap(), 3),
+                ("miner8.near".parse().unwrap(), 3),
+                ("miner9.near".parse().unwrap(), 3),
+                ("miner10.near".parse().unwrap(), 3),
+            ],
+        }]),
     };
     assert_eq!(expected, log.to_string());
 }
-
-

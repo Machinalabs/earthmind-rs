@@ -159,7 +159,7 @@ fn test_reveal_by_miner_when_request_is_not_registered() {
 #[test]
 fn test_reveal_by_miner_when_proposal_is_already_reveal() {
     let miner_1 = get_default_miner_account();
-    let deposit =  NearToken::from_near(15);
+    let deposit = NearToken::from_near(15);
 
     Environment::with_account(miner_1.clone()).with_attached_deposit(deposit).create();
 
@@ -231,7 +231,7 @@ fn test_reveal_by_miner_when_answer_not_equal() {
 
     contract.commit_by_miner(DEFAULT_REQUEST_ID.to_string(), DEFAULT_MINER_ANSWER.to_string());
 
-     assert_logs(vec![
+    assert_logs(vec![
         Log::Event {
             event_name: "register_protocol".to_string(),
             data: vec![("account", json![MINER_1])],

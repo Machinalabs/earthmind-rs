@@ -334,13 +334,16 @@ fn test_reveal_by_validator_when_request_is_not_registered() {
         Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
         contract.register_protocol();
         contract.register_miner();
-        assert_logs(vec![Log::Event {
-            event_name: "register_protocol".to_string(),
-            data: vec![("account", json![miners])],
-        }, Log::Event {
-            event_name: "register_miner".to_string(),
-            data: vec![("miner", json![miners])],
-        }]);
+        assert_logs(vec![
+            Log::Event {
+                event_name: "register_protocol".to_string(),
+                data: vec![("account", json![miners])],
+            },
+            Log::Event {
+                event_name: "register_miner".to_string(),
+                data: vec![("miner", json![miners])],
+            },
+        ]);
     }
 
     let validator = get_default_validator_account();
@@ -639,13 +642,16 @@ fn test_reveal_by_validator_when_vote_for_miner_not_registered() {
         Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
         contract.register_protocol();
         contract.register_miner();
-        assert_logs(vec![Log::Event {
-            event_name: "register_protocol".to_string(),
-            data: vec![("account", json![miners])],
-        }, Log::Event {
-            event_name: "register_miner".to_string(),
-            data: vec![("miner", json![miners])],
-        }]);
+        assert_logs(vec![
+            Log::Event {
+                event_name: "register_protocol".to_string(),
+                data: vec![("account", json![miners])],
+            },
+            Log::Event {
+                event_name: "register_miner".to_string(),
+                data: vec![("miner", json![miners])],
+            },
+        ]);
     }
 
     let validator = get_default_validator_account();
@@ -705,13 +711,15 @@ fn test_reveal_by_validator_when_miner_is_duplicated() {
         Environment::with_account(miners.clone()).with_attached_deposit(DEFAULT_DEPOSIT).create();
         contract.register_protocol();
         contract.register_miner();
-        assert_logs(vec![Log::Event {
-            event_name: "register_protocol".to_string(),
-            data: vec![("account", json![miners])],
-        }, Log::Event {
-            event_name: "register_miner".to_string(),
-            data: vec![("miner", json![miners])],
-        }, 
+        assert_logs(vec![
+            Log::Event {
+                event_name: "register_protocol".to_string(),
+                data: vec![("account", json![miners])],
+            },
+            Log::Event {
+                event_name: "register_miner".to_string(),
+                data: vec![("miner", json![miners])],
+            },
         ]);
     }
 

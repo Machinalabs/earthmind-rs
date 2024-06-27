@@ -240,13 +240,16 @@ fn test_vote_for_miners_with_multiple_validators() {
     contract.register_protocol();
     contract.register_validator();
 
-    assert_logs(vec![Log::Event {
-        event_name: "register_protocol".to_string(),
-        data: vec![("account", json![VALIDATOR_2])],
-    },Log::Event {
-        event_name: "register_validator".to_string(),
-        data: vec![("validator", json![VALIDATOR_2])],
-    }]);
+    assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![VALIDATOR_2])],
+        },
+        Log::Event {
+            event_name: "register_validator".to_string(),
+            data: vec![("validator", json![VALIDATOR_2])],
+        },
+    ]);
 
     Environment::with_account(validator_2.clone())
         .with_block_timestamp(COMMIT_VALIDATOR_TIME)
@@ -298,11 +301,12 @@ fn test_get_top_10_voters() {
         Log::Event {
             event_name: "register_protocol".to_string(),
             data: vec![("account", json![VALIDATOR_1])],
-        }, 
+        },
         Log::Event {
-        event_name: "register_validator".to_string(),
-        data: vec![("validator", json![VALIDATOR_1])],
-    }]);
+            event_name: "register_validator".to_string(),
+            data: vec![("validator", json![VALIDATOR_1])],
+        },
+    ]);
 
     let validator_2 = get_account_for_validator(VALIDATOR_2);
     let deposit = NearToken::from_yoctonear(10u128.pow(25));
@@ -316,9 +320,9 @@ fn test_get_top_10_voters() {
             data: vec![("account", json![VALIDATOR_2])],
         },
         Log::Event {
-        event_name: "register_validator".to_string(),
-        data: vec![("validator", json![VALIDATOR_2])],
-    }
+            event_name: "register_validator".to_string(),
+            data: vec![("validator", json![VALIDATOR_2])],
+        },
     ]);
 
     let validator_3 = get_account_for_validator(VALIDATOR_3);
