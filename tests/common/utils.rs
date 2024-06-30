@@ -62,16 +62,16 @@ pub fn group_registered_miners() -> Vec<AccountId> {
 
 pub fn default_miners_commit_answer() -> Vec<String> {
     let value = vec![
-        "83a297c4156180a209ab3b4be1f9bb55fe692dd02826a0265431d60c6e2ac871".to_string(),
-        "b6ddf58b65f644181e552accafe9518ba9492508ef3ed11f4ea3169020837cb6".to_string(),
-        "9c46c81435ee97dd838114edc911ba8620cf48e496245ee8741aa2c16747e7dd".to_string(),
-        "2c67d7f748b540a6fe41a6ac0cd538d422a895d9b9e416216136e2238d390f35".to_string(),
-        "f5f5af5e2a852672616eccee25fc5ab651f4e408a45f2307ac7b318b3d48233b".to_string(),
-        "6d30f164f418a39e0a767edddeb880e132d9f110d13817409cf0c484325ef570".to_string(),
-        "bcae6fc0f564c0cec80344e8faf9674f91ab7130e6f92f770fdba64f977544b4".to_string(),
-        "858416fce42f6d5f0fb3ee210a2fd98220d09c3cf698ed6c2e013c42c990cda9".to_string(),
-        "0d88f6c7fac55bfedd5b9bc541f4642ae71eb413825606653d387eea52f98913".to_string(),
-        "81db51808dc7c63a041cbb2dda9aa123d5132f4a6015e5aa2f25decdebd007d8".to_string(),
+        "422fa60e22dc75c98d21bb975323c5c0b854d6b0b7a63d6446b3bbb628b65a5b".to_string(),
+        "c06a8aabd77066edbee09e50289c3cc1a3a57514bea9a9bcbb244559816ccf26".to_string(),
+        "7fa05dacffc6bd12f708929057f259ab61505b6f21e45450d4c04509e0071e49".to_string(),
+        "49284c05ff843c5a947bb041fafab9eb77685463f7c1e285274b878f2a2ee8a1".to_string(),
+        "859597f6b7e5bc55a5ef630f6b1a7a8800740f8b77e6213fe314029010b132d4".to_string(),
+        "51dde426921f48e3954ced820ec684bf480d66f0594ff5ffd85fd55e7a6b1736".to_string(),
+        "24452398ffcafe810ec9c268d7637c9fafb1d407a76a7f219c176d4ae7d7e570".to_string(),
+        "c062ac786582a16be008945533fe2db95de5d841dba864523bc3123c5642d346".to_string(),
+        "21aeb50d9b89cfceccdf33741d037c66641e59acdf21f97457627d7f85db206e".to_string(),
+        "47fb74320537a28d0130c7b2f00d4a75be7bdcf14b15930e36c336151de6dddc".to_string(),
     ];
     value
 }

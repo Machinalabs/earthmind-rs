@@ -1,26 +1,29 @@
-use near_sdk::NearToken;
 use near_workspaces::AccountId;
 use serde_json::json;
 
-use common::constants::{DEFAULT_MESSAGE_TO_REQUEST, DEFAULT_REQUEST_ID};
+use common::constants::{
+    DEFAULT_CULTURE, DEFAULT_DEPOSIT_PROTOCOL, DEFAULT_MESSAGE_TO_REQUEST, DEFAULT_MINER_ANSWER, DEFAULT_REQUEST_ID, DEFAULT_VALIDATOR_ANSWER,
+};
 use common::environment::Environment;
 use common::types::Log;
-use common::utils::{assert_logs, generate_validator_answer, get_default_miner_account, get_default_validator_account};
+use common::utils::{assert_logs, generate_validator_answer, get_default_miner_account, get_default_protocol_account, get_default_validator_account};
 
-use earthmind_rs::{Contract, RegisterRequestResult};
+use earthmind_rs::{Contract, Module, RegisterRequestResult};
 
 pub mod common;
 
 #[test]
 fn test_request_governance_decision_when_is_registered_returns_already_registered() {
-    let miner = get_default_miner_account();
-    let deposit = NearToken::from_near(15);
-
-    Environment::with_account(miner.clone()).with_attached_deposit(deposit).create();
-
     let mut contract = Contract::new();
-    contract.register_protocol();
-    contract.register_miner();
+
+    let protocol = get_default_protocol_account();
+    Environment::with_account(protocol.clone())
+        .with_attached_deposit(DEFAULT_DEPOSIT_PROTOCOL)
+        .create();
+
+    let modules = vec![Module::TextPrompting, Module::ObjectRecognition];
+    contract.register_protocol(DEFAULT_CULTURE.to_string(), modules);
+
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     let result = contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
@@ -30,17 +33,13 @@ fn test_request_governance_decision_when_is_registered_returns_already_registere
     assert_logs(vec![
         Log::Event {
             event_name: "register_protocol".to_string(),
-            data: vec![("account", json![miner])],
-        },
-        Log::Event {
-            event_name: "register_miner".to_string(),
-            data: vec![("miner", json![miner])],
+            data: vec![("account", json![protocol])],
         },
         Log::Event {
             event_name: "register_request".to_string(),
             data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
         },
-        Log::Message("Attempted to register an already registered request: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string()),
+        Log::Message("Attempted to register an already registered request: 73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b".to_string()),
     ]);
 }
 
@@ -48,15 +47,10 @@ fn test_request_governance_decision_when_is_registered_returns_already_registere
 
 #[test]
 fn test_hash_miner_answer() {
+    let contract = Contract::new();
+
     let miner = get_default_miner_account();
-    let deposit = NearToken::from_near(15);
-
-    Environment::with_account(miner).with_attached_deposit(deposit).create();
-
-    let mut contract = Contract::new();
-    contract.register_protocol();
-    contract.register_miner();
-    contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
+    Environment::with_account(miner).create();
 
     let request_id = DEFAULT_REQUEST_ID.to_string();
     let answer = true;
@@ -64,21 +58,16 @@ fn test_hash_miner_answer() {
 
     let result = contract.hash_miner_answer(request_id, answer, message);
 
-    assert_eq!(result, "83a297c4156180a209ab3b4be1f9bb55fe692dd02826a0265431d60c6e2ac871");
+    assert_eq!(result, DEFAULT_MINER_ANSWER);
 }
 
 // Hash validator answer
 #[test]
 fn test_hash_validator_answer() {
+    let contract = Contract::new();
+
     let validator = get_default_validator_account();
-    let deposit = NearToken::from_near(15);
-
-    Environment::with_account(validator).with_attached_deposit(deposit).create();
-    let mut contract = Contract::new();
-    contract.register_protocol();
-    contract.register_miner();
-
-    contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
+    Environment::with_account(validator).create();
 
     let request_id = DEFAULT_REQUEST_ID.to_string();
     let answer = generate_validator_answer();
@@ -86,22 +75,18 @@ fn test_hash_validator_answer() {
 
     let result = contract.hash_validator_answer(request_id, answer, message);
 
-    assert_eq!(result, "bf3250b68ca58d084d4898561d98d6fa9c97863ee644ff49f211ca425b0d6bf5");
+    assert_eq!(result, DEFAULT_VALIDATOR_ANSWER);
 }
 
 #[test]
 #[should_panic]
 fn test_hash_validator_answer_when_answer_is_not_complete() {
-    let validator = get_default_validator_account();
+    let contract = Contract::new();
 
+    let validator = get_default_validator_account();
     Environment::with_account(validator).create();
 
-    let mut contract = Contract::new();
-
-    let message = "Should we add this new NFT to our protocol?";
-    contract.request_governance_decision(message.to_string());
-
-    let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string();
+    let request_id = DEFAULT_REQUEST_ID.to_string();
     let answer = generate_validator_answer();
     let answer: Vec<AccountId> = answer[0..answer.len() - 1].to_vec();
     let message = "It's a cool NFT".to_string();

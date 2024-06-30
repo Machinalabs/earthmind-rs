@@ -14,7 +14,7 @@ mod models;
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
 pub struct Contract {
-    protocol: Protocol,
+    protocols: LookupMap<AccountId, Protocol>,
     requests: LookupMap<Hash, Request>,
     miners: LookupMap<AccountId, Stake>,
     validators: LookupMap<AccountId, Stake>,
@@ -26,27 +26,34 @@ impl Contract {
     #[init]
     pub fn new() -> Self {
         Self {
-            protocol: Protocol::new(),
+            protocols: LookupMap::new(b"protocols".to_vec()),
             requests: LookupMap::new(b"requests".to_vec()),
             miners: LookupMap::new(b"miners".to_vec()),
             validators: LookupMap::new(b"validators".to_vec()),
         }
     }
 
-    pub fn register_protocol(&mut self) -> RegisterProtocolResult {
+    pub fn register_protocol(&mut self, culture: String, modules: Vec<Module>) -> RegisterProtocolResult {
         let new_account = env::predecessor_account_id();
-        let deposit = env::attached_deposit();
+        let registration_fee = env::attached_deposit();
 
-        if deposit < PROTOCOL_REGISTRATION_FEE {
+        if registration_fee < PROTOCOL_REGISTRATION_FEE {
             panic!("Deposit is less than the required to register");
         }
 
-        if self.is_account_registered(new_account.clone()) {
+        if self.is_protocol_registered(new_account.clone()) {
             log!("Attempted to register an already registered account: {}", new_account);
             return RegisterProtocolResult::AlreadyRegistered;
         }
 
-        self.protocol.registered_accounts.insert(new_account.clone(), deposit);
+        let new_protocol = Protocol {
+            account: new_account.clone(),
+            culture,
+            modules,
+            registration_fee,
+        };
+
+        self.protocols.insert(new_account.clone(), new_protocol);
 
         let register_protocol_log = EventLog {
             standard: "emip001".to_string(),
@@ -59,20 +66,13 @@ impl Contract {
         RegisterProtocolResult::Success
     }
 
-    pub fn is_account_registered(&self, account: AccountId) -> bool {
-        self.protocol.registered_accounts.contains_key(&account)
+    pub fn is_protocol_registered(&self, account: AccountId) -> bool {
+        self.protocols.contains_key(&account)
     }
 
     pub fn register_miner(&mut self) -> RegisterMinerResult {
         let new_miner_id = env::predecessor_account_id();
         let deposit = env::attached_deposit();
-
-        // TODO: Validate that the account is already registered in the protocol
-        // An account could be a miner and a validator in the same request?
-        if !self.is_account_registered(new_miner_id.clone()) {
-            log!("This account is not registered in the protocol: {}", new_miner_id);
-            return RegisterMinerResult::NotRegisteredProtocol;
-        }
 
         if deposit < MIN_MINER_STAKE {
             panic!("Miner deposit is less than the minimum stake");
@@ -105,13 +105,6 @@ impl Contract {
         let new_validator_id = env::predecessor_account_id();
         let deposit = env::attached_deposit();
 
-        // TODO: Validate that the account is already registered in the protocol
-        // An account could be a miner and a validator in the same request?
-        if !self.is_account_registered(new_validator_id.clone()) {
-            log!("This account is not registered in the protocol: {}", new_validator_id);
-            return RegisterValidatorResult::NotRegisteredProtocol;
-        }
-
         if deposit < MIN_VALIDATOR_STAKE {
             panic!("Validator deposit is less than the minimum stake");
         }
@@ -139,12 +132,14 @@ impl Contract {
     }
 
     pub fn request_governance_decision(&mut self, message: String) -> RegisterRequestResult {
-        let new_request_id = env::keccak256(message.as_bytes());
-        let new_request_id_hex = hex::encode(new_request_id);
         let sender_account = env::predecessor_account_id();
 
+        let concatenated_answer = format!("{}{}", sender_account, message);
+        let new_request_id = env::keccak256(concatenated_answer.as_bytes());
+        let new_request_id_hex = hex::encode(new_request_id);
+
         //@dev verify that user is registerd in the protocol
-        if !self.is_account_registered(sender_account.clone()) {
+        if !self.is_protocol_registered(sender_account.clone()) {
             panic!("Account unregistered: {}", sender_account);
         }
 
@@ -406,7 +401,7 @@ impl Contract {
             }
         }
 
-        //@dev verify that every unique account is registered as miner
+        //@dev verify that every account is registered as miner
         for accounts in answer.clone() {
             if !self.miners.contains_key(&accounts) {
                 log!("Account not registered as miner: {}", accounts);
@@ -447,7 +442,7 @@ impl Contract {
             }
         }
 
-        //@dev verify that the commit answer was revealed
+        //@dev verify that the commit answer by miner was revealed
         for accounts in answer.clone() {
             let miner_proposal = complete_request
                 .miners_proposals
@@ -456,6 +451,7 @@ impl Contract {
 
             if !miner_proposal.is_revealed {
                 log!("Commit by miner not revealed: {}", accounts);
+                return RevealValidatorResult::Fail;
             }
         }
 
@@ -563,6 +559,7 @@ impl Contract {
 }
 
 // Test private function "get_request_by_id_mut"
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -585,157 +582,131 @@ mod test {
     fn test_request_governance_decision() {
         let mut contract = Contract::new();
 
-        let context = get_context("miner1.near".parse().unwrap(), 100000000, NearToken::from_near(5));
+        let context = get_context("account1.near".parse().unwrap(), 100000000, NearToken::from_near(5));
         testing_env!(context.build());
 
-        contract.register_protocol();
-
-        contract.register_miner();
+        let modules = vec![Module::TextPrompting, Module::ObjectRecognition];
+        contract.register_protocol("Governance decision".to_string(), modules);
 
         let message = "Should we add this new NFT to our protocol?";
-
         let result_1 = contract.request_governance_decision(message.to_string());
         assert_eq!(result_1, RegisterRequestResult::Success);
 
-        let request_id = env::keccak256(message.as_bytes());
+        let sender_account = env::predecessor_account_id();
+        let concatenated_answer = format!("{}{}", sender_account, message);
+        let request_id = env::keccak256(concatenated_answer.as_bytes());
         let request_id_hex = hex::encode(request_id);
+
         assert!(contract.get_request_by_id_mut(request_id_hex).is_some());
 
         let logs = get_logs();
-        assert_eq!(logs.len(), 3);
+        assert_eq!(logs.len(), 2);
         assert_eq!(
             logs[0],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_protocol","data":[{"account":"miner1.near"}]}"#
+            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_protocol","data":[{"account":"account1.near"}]}"#
         );
+
         assert_eq!(
             logs[1],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_miner","data":[{"miner":"miner1.near"}]}"#
-        );
-        assert_eq!(
-            logs[2],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#
+            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b"}]}"#
         );
     }
-    /*
+
     #[test]
     fn test_multiple_request_governance_decision() {
+        let mut contract = Contract::new();
 
-        let context = get_context("miner1.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
+        let context = get_context("account1.near".parse().unwrap(), 100000000, NearToken::from_near(5));
         testing_env!(context.build());
 
-        let mut contract = Contract::new();
-        contract.register_miner();
-        let message = "Should we add this new NFT to our protocol?";
+        let modules = vec![Module::TextPrompting, Module::ObjectRecognition];
+        contract.register_protocol("Governance decision".to_string(), modules);
 
+        let message = "Should we add this new NFT to our protocol?";
         let result_1 = contract.request_governance_decision(message.to_string());
         assert_eq!(result_1, RegisterRequestResult::Success);
 
-        let request_id = env::keccak256(message.as_bytes());
+        let sender_account = env::predecessor_account_id();
+        let concatenated_answer = format!("{}{}", sender_account, message);
+        let request_id = env::keccak256(concatenated_answer.as_bytes());
         let request_id_hex = hex::encode(request_id);
+
         assert!(contract.get_request_by_id_mut(request_id_hex).is_some());
 
         let logs = get_logs();
         assert_eq!(logs.len(), 2);
         assert_eq!(
             logs[0],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_miner","data":[{"miner":"miner1.near"}]}"#
-        );
-        assert_eq!(
-            logs[1],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#
+            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_protocol","data":[{"account":"account1.near"}]}"#
         );
 
-        let context = get_context("validator1.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(25)));
+        assert_eq!(
+            logs[1],
+            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b"}]}"#
+        );
+
+        let context = get_context("account2.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(25)));
         testing_env!(context.build());
-        contract.register_validator();
+
+        let modules = vec![Module::TextPrompting, Module::ObjectRecognition];
+        contract.register_protocol("Governance decision for ethereum".to_string(), modules);
+
         let message_2 = "Should we add this to our protocol?";
         let result_2 = contract.request_governance_decision(message_2.to_string());
         assert_eq!(result_2, RegisterRequestResult::Success);
 
-        let request_id_2 = env::keccak256(message_2.as_bytes());
+        let sender_account_2 = env::predecessor_account_id();
+        let concatenated_answer_2 = format!("{}{}", sender_account_2, message_2);
+        let request_id_2 = env::keccak256(concatenated_answer_2.as_bytes());
         let request_id_hex_2 = hex::encode(request_id_2);
+
         assert!(contract.get_request_by_id_mut(request_id_hex_2).is_some());
         let logs = get_logs();
         assert_eq!(logs.len(), 2);
         assert_eq!(
             logs[0],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_validator","data":[{"validator":"validator1.near"}]}"#
+            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_protocol","data":[{"account":"account2.near"}]}"#
         );
         assert_eq!(
             logs[1],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"38d15af71379737839e4738066fd4091428081d6a57498b2852337a195bc9f5f"}]}"#
+            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"c4b35bc95d323446f6f800e7639457cddc34c7f768772e4871adf2dd34f89ed8"}]}"#
         );
-    } */
+    }
 
     #[test]
-    #[should_panic]
-    fn test_request_governance_decision_with_an_unregistered_account() {
-        let context = get_context("miner1.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(2)));
-        testing_env!(context.build());
-
+    #[should_panic(expected = "Account unregistered: account1.near")]
+    fn test_request_governance_decision_with_an_unregistered_protocol() {
         let mut contract = Contract::new();
+
+        let context = get_context("account1.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(2)));
+        testing_env!(context.build());
 
         let message = "Should we add this new NFT to our protocol?";
 
-        let result_1 = contract.request_governance_decision(message.to_string());
-        assert_eq!(result_1, RegisterRequestResult::Success);
-
-        let request_id = env::keccak256(message.as_bytes());
-        let request_id_hex = hex::encode(request_id);
-        assert!(contract.get_request_by_id_mut(request_id_hex).is_some());
-
-        let logs = get_logs();
-        assert_eq!(logs.len(), 1);
-        assert_eq!(
-            logs[0],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"}]}"#
-        );
-
-        let context = get_context("miner1.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-        testing_env!(context.build());
-
-        let message_2 = "Should we add this to our protocol?";
-        let result_2 = contract.request_governance_decision(message_2.to_string());
-        assert_eq!(result_2, RegisterRequestResult::Success);
-
-        let request_id_2 = env::keccak256(message_2.as_bytes());
-        let request_id_hex_2 = hex::encode(request_id_2);
-        assert!(contract.get_request_by_id_mut(request_id_hex_2).is_some());
-
-        let logs = get_logs();
-        assert_eq!(logs.len(), 1);
-
-        assert_eq!(
-            logs[0],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"38d15af71379737839e4738066fd4091428081d6a57498b2852337a195bc9f5f"}]}"#
-        );
+        contract.request_governance_decision(message.to_string());
     }
 
     #[test]
     fn test_get_request_by_id_mut() {
         let mut contract = Contract::new();
 
-        let context = get_context("miner1.near".parse().unwrap(), 100000000, NearToken::from_near(5));
+        let context = get_context("account1.near".parse().unwrap(), 100000000, NearToken::from_near(5));
         testing_env!(context.build());
 
-        contract.register_protocol();
-
-        let context = get_context("miner1.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
-        testing_env!(context.build());
-
-        contract.register_miner();
+        let modules = vec![Module::TextPrompting, Module::ObjectRecognition];
+        contract.register_protocol("Governance decision for ethereum".to_string(), modules);
 
         let message = "Should we add this new NFT to our protocol?";
         contract.request_governance_decision(message.to_string());
 
-        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726";
+        let request_id = "73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b";
         assert!(contract.get_request_by_id_mut(request_id.to_string()).is_some());
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "Account unregistered: account1.near")]
     fn test_get_request_by_id_mut_an_unregistered_account() {
-        let context = get_context("miner1.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
+        let context = get_context("account1.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(24)));
         testing_env!(context.build());
 
         let mut contract = Contract::new();
@@ -743,7 +714,7 @@ mod test {
         let message = "Should we add this new NFT to our protocol?";
         contract.request_governance_decision(message.to_string());
 
-        let request_id = "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726";
+        let request_id = "73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b";
         assert!(contract.get_request_by_id_mut(request_id.to_string()).is_some());
     }
 
