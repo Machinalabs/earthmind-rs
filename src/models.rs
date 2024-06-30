@@ -116,22 +116,3 @@ pub struct Protocol {
     pub modules: Vec<Module>,
     pub registration_fee: NearToken,
 }
-
-/*
-impl Default for Protocol {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Protocol {
-    pub fn new() -> Self {
-        Self {
-            culture : "NA".to_string(),
-            account : env::predecessor_account_id(),
-            modules: Vec::new(),
-            registration_fee : NearToken::from_near(1),
-        }
-    }
-}
- */
