@@ -1,31 +1,35 @@
-use near_sdk::NearToken;
 use serde_json::json;
 
-use common::constants::{COMMIT_VALIDATOR_TIME, DEFAULT_MESSAGE_TO_REQUEST, DEFAULT_REQUEST_ID, DEFAULT_VALIDATOR_ANSWER, VALIDATOR_1};
+use common::constants::{
+    COMMIT_VALIDATOR_TIME, DEFAULT_CULTURE, DEFAULT_DEPOSIT_PROTOCOL, DEFAULT_DEPOSIT_VALIDATOR, DEFAULT_MESSAGE_TO_REQUEST, DEFAULT_REQUEST_ID,
+    DEFAULT_VALIDATOR_ANSWER, VALIDATOR_1,
+};
 use common::environment::Environment;
 use common::types::Log;
-use common::utils::{assert_logs, get_default_validator_account};
+use common::utils::{assert_logs, get_default_protocol_account, get_default_validator_account};
 
-use earthmind_rs::CommitValidatorResult;
-use earthmind_rs::Contract;
+use earthmind_rs::{CommitValidatorResult, Contract, Module};
 
 pub mod common;
 
 #[test]
 fn test_commit_by_validator_when_validator_and_request_exist() {
-    let validator = get_default_validator_account();
-    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
-
-    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
     let mut contract = Contract::new();
 
-    contract.register_validator();
+    // @dev Protocol register to earthmind protocol and request a governance decision
+    let protocol = get_default_protocol_account();
+    Environment::with_account(protocol.clone())
+        .with_attached_deposit(DEFAULT_DEPOSIT_PROTOCOL)
+        .create();
+
+    let modules = vec![Module::TextPrompting, Module::ObjectRecognition];
+    contract.register_protocol(DEFAULT_CULTURE.to_string(), modules);
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     assert_logs(vec![
         Log::Event {
-            event_name: "register_validator".to_string(),
-            data: vec![("validator", json![VALIDATOR_1])],
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![protocol])],
         },
         Log::Event {
             event_name: "register_request".to_string(),
@@ -33,8 +37,22 @@ fn test_commit_by_validator_when_validator_and_request_exist() {
         },
     ]);
 
+    //@dev Validator register to earthmind protocol and commit an answer to a request
+    let validator = get_default_validator_account();
+
+    Environment::with_account(validator.clone())
+        .with_attached_deposit(DEFAULT_DEPOSIT_VALIDATOR)
+        .create();
+
+    contract.register_validator();
+
+    assert_logs(vec![Log::Event {
+        event_name: "register_validator".to_string(),
+        data: vec![("validator", json![VALIDATOR_1])],
+    }]);
+
     Environment::with_account(validator)
-        .with_attached_deposit(custom_deposit)
+        .with_attached_deposit(DEFAULT_DEPOSIT_VALIDATOR)
         .with_block_timestamp(COMMIT_VALIDATOR_TIME)
         .create();
 
@@ -49,24 +67,30 @@ fn test_commit_by_validator_when_validator_and_request_exist() {
 }
 
 #[test]
+#[should_panic]
 fn test_commit_by_validator_when_validator_dont_registered_and_request_exist() {
-    let validator = get_default_validator_account();
-    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
-
-    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
     let mut contract = Contract::new();
 
+    // @dev Protocol register to earthmind protocol and request a governance decision
+    let protocol = get_default_protocol_account();
+    Environment::with_account(protocol.clone())
+        .with_attached_deposit(DEFAULT_DEPOSIT_PROTOCOL)
+        .create();
+
+    let modules = vec![Module::TextPrompting, Module::ObjectRecognition];
+    contract.register_protocol(DEFAULT_CULTURE.to_string(), modules);
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
-    assert_logs(vec![Log::Event {
-        event_name: "register_request".to_string(),
-        data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
-    }]);
-
-    Environment::with_account(validator)
-        .with_attached_deposit(custom_deposit)
-        .with_block_timestamp(COMMIT_VALIDATOR_TIME)
-        .create();
+    assert_logs(vec![
+        Log::Event {
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![protocol])],
+        },
+        Log::Event {
+            event_name: "register_request".to_string(),
+            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+        },
+    ]);
 
     let result = contract.commit_by_validator(DEFAULT_REQUEST_ID.to_string(), DEFAULT_VALIDATOR_ANSWER.to_string());
 
@@ -77,11 +101,10 @@ fn test_commit_by_validator_when_validator_dont_registered_and_request_exist() {
 
 #[test]
 fn test_commit_by_validator_when_validator_registered_and_request_dont_exist() {
-    let validator = get_default_validator_account();
-    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
-
-    Environment::with_account(validator).with_attached_deposit(custom_deposit).create();
     let mut contract = Contract::new();
+
+    let validator = get_default_validator_account();
+    Environment::with_account(validator).with_attached_deposit(DEFAULT_DEPOSIT_VALIDATOR).create();
 
     contract.register_validator();
 
@@ -94,26 +117,28 @@ fn test_commit_by_validator_when_validator_registered_and_request_dont_exist() {
             event_name: "register_validator".to_string(),
             data: vec![("validator", json![VALIDATOR_1])],
         },
-        Log::Message("Request is not registered: 0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string()),
+        Log::Message("Request is not registered: 73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b".to_string()),
     ]);
 }
 
 #[test]
-fn test_commit_by_validator_when_miner_and_request_exist_and_commit_already() {
-    let validator = get_default_validator_account();
-    let custom_deposit = NearToken::from_yoctonear(10u128.pow(25));
-
-    Environment::with_account(validator.clone()).with_attached_deposit(custom_deposit).create();
+fn test_commit_by_validator_when_validator_and_request_exist_and_commit_already() {
     let mut contract = Contract::new();
 
-    contract.register_validator();
+    // @dev Protocol register to earthmind protocol and request a governance decision
+    let protocol = get_default_protocol_account();
+    Environment::with_account(protocol.clone())
+        .with_attached_deposit(DEFAULT_DEPOSIT_PROTOCOL)
+        .create();
 
+    let modules = vec![Module::TextPrompting, Module::ObjectRecognition];
+    contract.register_protocol(DEFAULT_CULTURE.to_string(), modules);
     contract.request_governance_decision(DEFAULT_MESSAGE_TO_REQUEST.to_string());
 
     assert_logs(vec![
         Log::Event {
-            event_name: "register_validator".to_string(),
-            data: vec![("validator", json![VALIDATOR_1])],
+            event_name: "register_protocol".to_string(),
+            data: vec![("account", json![protocol])],
         },
         Log::Event {
             event_name: "register_request".to_string(),
@@ -121,13 +146,26 @@ fn test_commit_by_validator_when_miner_and_request_exist_and_commit_already() {
         },
     ]);
 
+    //@dev Validator register to earthmind protocol and commit an answer to a request
+    let validator = get_default_validator_account();
+
+    Environment::with_account(validator.clone())
+        .with_attached_deposit(DEFAULT_DEPOSIT_VALIDATOR)
+        .create();
+
+    contract.register_validator();
+
+    assert_logs(vec![Log::Event {
+        event_name: "register_validator".to_string(),
+        data: vec![("validator", json![VALIDATOR_1])],
+    }]);
+
     Environment::with_account(validator)
-        .with_attached_deposit(custom_deposit)
+        .with_attached_deposit(DEFAULT_DEPOSIT_VALIDATOR)
         .with_block_timestamp(COMMIT_VALIDATOR_TIME)
         .create();
 
     contract.commit_by_validator(DEFAULT_REQUEST_ID.to_string(), DEFAULT_VALIDATOR_ANSWER.to_string());
-
     let result = contract.commit_by_validator(DEFAULT_REQUEST_ID.to_string(), DEFAULT_VALIDATOR_ANSWER.to_string());
 
     assert_eq!(result, CommitValidatorResult::Fail);

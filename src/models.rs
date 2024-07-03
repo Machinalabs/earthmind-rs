@@ -8,9 +8,17 @@ pub type Stake = NearToken;
 
 #[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
 #[serde(crate = "near_sdk::serde")]
+pub enum RegisterProtocolResult {
+    Success,
+    AlreadyRegistered,
+}
+
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
+#[serde(crate = "near_sdk::serde")]
 pub enum RegisterMinerResult {
     Success,
     AlreadyRegistered,
+    NotRegisteredProtocol,
 }
 
 #[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
@@ -18,6 +26,7 @@ pub enum RegisterMinerResult {
 pub enum RegisterValidatorResult {
     Success,
     AlreadyRegistered,
+    NotRegisteredProtocol,
 }
 
 #[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
@@ -74,6 +83,12 @@ pub enum RequestState {
     Ended,
 }
 
+#[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
+#[serde(crate = "near_sdk::serde")]
+pub enum Module {
+    TextPrompting,
+    ObjectRecognition,
+}
 #[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct ValidatorProposal {
@@ -89,4 +104,15 @@ pub struct Request {
     pub start_time: u64,
     pub miners_proposals: LookupMap<AccountId, MinerProposal>,
     pub validators_proposals: LookupMap<AccountId, ValidatorProposal>,
+    pub votes_for_miners: LookupMap<AccountId, i32>,
+    pub miner_keys: Vec<AccountId>,
+    pub top_ten: Vec<(AccountId, i32)>,
+}
+
+#[derive(BorshDeserialize, BorshSerialize, Debug)]
+pub struct Protocol {
+    pub account: AccountId,
+    pub culture: String,
+    pub modules: Vec<Module>,
+    pub registration_fee: NearToken,
 }
