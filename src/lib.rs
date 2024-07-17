@@ -33,6 +33,7 @@ impl Contract {
         }
     }
 
+    #[payable]
     pub fn register_protocol(&mut self, culture: String, modules: Vec<Module>) -> RegisterProtocolResult {
         let new_account = env::predecessor_account_id();
         let registration_fee = env::attached_deposit();
@@ -70,6 +71,7 @@ impl Contract {
         self.protocols.contains_key(&account)
     }
 
+    #[payable]
     pub fn register_miner(&mut self) -> RegisterMinerResult {
         let new_miner_id = env::predecessor_account_id();
         let deposit = env::attached_deposit();
