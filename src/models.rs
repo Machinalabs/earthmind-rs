@@ -2,18 +2,19 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::store::LookupMap;
 use near_sdk::{AccountId, NearToken};
+use schemars::JsonSchema;
 
 pub type Hash = String;
 pub type Stake = NearToken;
 
-#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum RegisterProtocolResult {
     Success,
     AlreadyRegistered,
 }
 
-#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum RegisterMinerResult {
     Success,
@@ -21,7 +22,7 @@ pub enum RegisterMinerResult {
     NotRegisteredProtocol,
 }
 
-#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum RegisterValidatorResult {
     Success,
@@ -29,42 +30,42 @@ pub enum RegisterValidatorResult {
     NotRegisteredProtocol,
 }
 
-#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum RegisterRequestResult {
     Success,
     AlreadyRegistered,
 }
 
-#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum CommitMinerResult {
     Success,
     Fail,
 }
 
-#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum RevealMinerResult {
     Success,
     Fail,
 }
 
-#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq,JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum CommitValidatorResult {
     Success,
     Fail,
 }
 
-#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq,JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum RevealValidatorResult {
     Success,
     Fail,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug, Clone)]
+#[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug, Clone, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub struct MinerProposal {
     pub proposal_hash: Hash,
@@ -72,7 +73,7 @@ pub struct MinerProposal {
     pub is_revealed: bool,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug, Clone, PartialEq, Eq, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum RequestState {
     NonStarted,
@@ -83,7 +84,7 @@ pub enum RequestState {
     Ended,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug, Clone, PartialEq, Eq, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum Module {
     TextPrompting,
