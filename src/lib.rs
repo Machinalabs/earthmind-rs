@@ -151,10 +151,12 @@ impl Contract {
             return RegisterRequestResult::AlreadyRegistered;
         }
 
+        let start_time = env::block_timestamp();
+
         let new_request = Request {
             sender: sender_account,
             request_id: new_request_id_hex.clone(),
-            start_time: env::block_timestamp(),
+            start_time: start_time,
             miners_proposals: LookupMap::new(b"miner_proposal".to_vec()),
             validators_proposals: LookupMap::new(b"validator_proposal".to_vec()),
             votes_for_miners: LookupMap::new(b"votes_miners".to_vec()),
@@ -170,6 +172,11 @@ impl Contract {
             version: "1.0.0".to_string(),
             event: EventLogVariant::RegisterRequest(vec![RegisterRequestLog {
                 request_id: new_request_id_hex,
+                start_time: start_time,
+                reveal_miner_time: REVEAL_MINER_DURATION,
+                commit_miner_time: COMMIT_MINER_DURATION,
+                reveal_validator_time: REVEAL_VALIDATOR_DURATION,
+                commit_validator_time: COMMIT_VALIDATOR_DURATION,
             }]),
         };
 
@@ -610,7 +617,7 @@ mod test {
 
         assert_eq!(
             logs[1],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b"}]}"#
+            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b","start_time":100000000,"reveal_miner_time":30000000000,"commit_miner_time":30000000000,"reveal_validator_time":30000000000,"commit_validator_time":30000000000}]}"#
         );
     }
 
@@ -644,7 +651,7 @@ mod test {
 
         assert_eq!(
             logs[1],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b"}]}"#
+            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b","start_time":100000000,"reveal_miner_time":30000000000,"commit_miner_time":30000000000,"reveal_validator_time":30000000000,"commit_validator_time":30000000000}]}"#
         );
 
         let context = get_context("account2.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(25)));
@@ -671,7 +678,7 @@ mod test {
         );
         assert_eq!(
             logs[1],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"c4b35bc95d323446f6f800e7639457cddc34c7f768772e4871adf2dd34f89ed8"}]}"#
+            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"c4b35bc95d323446f6f800e7639457cddc34c7f768772e4871adf2dd34f89ed8","start_time":100000000,"reveal_miner_time":30000000000,"commit_miner_time":30000000000,"reveal_validator_time":30000000000,"commit_validator_time":30000000000}]}"#
         );
     }
 

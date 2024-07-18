@@ -37,7 +37,14 @@ fn test_request_governance_decision_when_is_registered_returns_already_registere
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
         Log::Message("Attempted to register an already registered request: 73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b".to_string()),
     ]);

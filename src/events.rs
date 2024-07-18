@@ -59,6 +59,11 @@ pub struct RegisterValidatorLog {
 #[serde(crate = "near_sdk::serde")]
 pub struct RegisterRequestLog {
     pub request_id: String,
+    pub start_time: u64,
+    pub reveal_miner_time: u64,
+    pub commit_miner_time: u64,
+    pub reveal_validator_time: u64,
+    pub commit_validator_time: u64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

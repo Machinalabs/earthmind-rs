@@ -60,16 +60,26 @@ fn test_format_register_validator() {
 
 #[test]
 fn test_format_register_request() {
-    let expected = r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726"},{"request_id":"38d15af71379737839e4738066fd4091428081d6a57498b2852337a195bc9f5f"}]}"#;
+    let expected = r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726","start_time":100000000,"reveal_miner_time":30000000000,"commit_miner_time":30000000000,"reveal_validator_time":30000000000,"commit_validator_time":30000000000},{"request_id":"38d15af71379737839e4738066fd4091428081d6a57498b2852337a195bc9f5f","start_time":100000000,"reveal_miner_time":30000000000,"commit_miner_time":30000000000,"reveal_validator_time":30000000000,"commit_validator_time":30000000000}]}"#;
     let log = EventLog {
         standard: "emip001".to_string(),
         version: "1.0.0".to_string(),
         event: EventLogVariant::RegisterRequest(vec![
             RegisterRequestLog {
                 request_id: "0504fbdd23f833749a13dcde971238ba62bdde0ed02ea5424f5a522f50fae726".to_string(),
+                start_time: 100000000,
+                reveal_miner_time: 30000000000,
+                commit_miner_time: 30000000000,
+                reveal_validator_time: 30000000000,
+                commit_validator_time: 30000000000,
             },
             RegisterRequestLog {
                 request_id: "38d15af71379737839e4738066fd4091428081d6a57498b2852337a195bc9f5f".to_string(),
+                start_time: 100000000,
+                reveal_miner_time: 30000000000,
+                commit_miner_time: 30000000000,
+                reveal_validator_time: 30000000000,
+                commit_validator_time: 30000000000,
             },
         ]),
     };

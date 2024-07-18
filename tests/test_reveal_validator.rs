@@ -36,7 +36,14 @@ fn test_reveal_by_validator() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 
@@ -139,7 +146,14 @@ fn test_reveal_by_validator_when_miner_dont_have_a_commit_answer() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 
@@ -208,7 +222,14 @@ fn test_reveal_by_validator_when_miner_have_a_commit_answer_but_not_revealed() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 
@@ -308,7 +329,14 @@ fn test_reveal_by_validator_when_validator_is_not_registered() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 
@@ -367,7 +395,14 @@ fn test_reveal_by_validator_when_request_is_not_registered() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 
@@ -440,7 +475,14 @@ fn test_reveal_by_validator_when_proposal_is_already_reveal() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 
@@ -550,7 +592,14 @@ fn test_reveal_by_validator_when_answer_not_equal() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 
@@ -681,7 +730,14 @@ fn test_reveal_by_validator_when_vote_for_miner_not_registered() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 
@@ -753,7 +809,14 @@ fn test_reveal_by_validator_when_miner_is_duplicated() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 
@@ -824,7 +887,14 @@ fn test_reveal_by_validator_when_dont_have_a_commit_answer() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 

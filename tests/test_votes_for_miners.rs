@@ -35,7 +35,14 @@ fn test_votes_for_miner_using_one_validator() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 
@@ -152,7 +159,14 @@ fn test_vote_for_miners_with_multiple_validators() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 
@@ -309,7 +323,14 @@ fn test_get_top_10_voters() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 

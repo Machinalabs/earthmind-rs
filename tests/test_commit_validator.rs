@@ -33,7 +33,14 @@ fn test_commit_by_validator_when_validator_and_request_exist() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 
@@ -88,7 +95,14 @@ fn test_commit_by_validator_when_validator_dont_registered_and_request_exist() {
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 
@@ -142,7 +156,14 @@ fn test_commit_by_validator_when_validator_and_request_exist_and_commit_already(
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
     ]);
 
