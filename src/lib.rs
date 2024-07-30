@@ -103,6 +103,7 @@ impl Contract {
         self.miners.contains_key(&miner_id)
     }
 
+    #[payable]
     pub fn register_validator(&mut self) -> RegisterValidatorResult {
         let new_validator_id = env::predecessor_account_id();
         let deposit = env::attached_deposit();

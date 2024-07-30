@@ -7,5 +7,5 @@ pub const REVEAL_MINER_DURATION: u64 = THIRTY_SECONDS;
 pub const COMMIT_VALIDATOR_DURATION: u64 = THIRTY_SECONDS;
 pub const REVEAL_VALIDATOR_DURATION: u64 = THIRTY_SECONDS;
 pub const MIN_MINER_STAKE: NearToken = NearToken::from_near(1); // 1 NEAR
-pub const MIN_VALIDATOR_STAKE: NearToken = NearToken::from_near(10); // 10 NEAR
-pub const PROTOCOL_REGISTRATION_FEE: NearToken = NearToken::from_near(5);
+pub const MIN_VALIDATOR_STAKE: NearToken = NearToken::from_near(2); // 10 NEAR
+pub const PROTOCOL_REGISTRATION_FEE: NearToken = NearToken::from_near(1);
