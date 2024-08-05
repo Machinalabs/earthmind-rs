@@ -51,14 +51,14 @@ pub enum RevealMinerResult {
     Fail,
 }
 
-#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq,JsonSchema)]
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum CommitValidatorResult {
     Success,
     Fail,
 }
 
-#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq,JsonSchema)]
+#[derive(Debug, Serialize, Deserialize, BorshDeserialize, BorshSerialize, PartialEq, Eq, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum RevealValidatorResult {
     Success,

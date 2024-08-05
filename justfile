@@ -27,7 +27,7 @@ register:
 
 request:
     echo "Sending request"
-    near call "$CONTRACT_ACCOUNT" request_governance_decision '{"message":"proving again6?"}' --accountId "$PROTOCOL_ACCOUNT"
+    near call "$CONTRACT_ACCOUNT" request_governance_decision '{"message":"PROVING?????"}' --accountId "$PROTOCOL_ACCOUNT"
 
 register_miner:
     echo "register miner"
@@ -36,3 +36,6 @@ register_miner:
 register_validator:
     echo "register validator"
     near call "$CONTRACT_ACCOUNT" register_validator --accountId "$VALIDATOR_ACCOUNT" --amount 10
+
+
+

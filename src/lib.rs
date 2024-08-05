@@ -157,7 +157,7 @@ impl Contract {
         let new_request = Request {
             sender: sender_account,
             request_id: new_request_id_hex.clone(),
-            start_time: start_time,
+            start_time,
             miners_proposals: LookupMap::new(b"miner_proposal".to_vec()),
             validators_proposals: LookupMap::new(b"validator_proposal".to_vec()),
             votes_for_miners: LookupMap::new(b"votes_miners".to_vec()),
@@ -173,7 +173,7 @@ impl Contract {
             version: "1.0.0".to_string(),
             event: EventLogVariant::RegisterRequest(vec![RegisterRequestLog {
                 request_id: new_request_id_hex,
-                start_time: start_time,
+                start_time,
                 reveal_miner_time: REVEAL_MINER_DURATION,
                 commit_miner_time: COMMIT_MINER_DURATION,
                 reveal_validator_time: REVEAL_VALIDATOR_DURATION,
@@ -212,9 +212,8 @@ impl Contract {
         }
     }
 
-    pub fn hash_miner_answer(self, request_id: Hash, answer: bool, message: String) -> Hash {
-        let miner = env::predecessor_account_id();
-
+    // A Read-Only Function
+    pub fn hash_miner_answer(self, miner: AccountId, request_id: Hash, answer: bool, message: String) -> Hash {
         let concatenated_answer = format!("{}{}{}{}", request_id, miner, answer, message);
         let value = env::keccak256(concatenated_answer.as_bytes());
 
@@ -265,9 +264,8 @@ impl Contract {
         }
     }
 
-    pub fn hash_validator_answer(self, request_id: String, answer: Vec<AccountId>, message: String) -> Hash {
-        let validator = env::predecessor_account_id();
-
+    // A Read-Only Function
+    pub fn hash_validator_answer(self, validator: AccountId, request_id: String, answer: Vec<AccountId>, message: String) -> Hash {
         require!(answer.len() == 10, "Invalid answer");
 
         let mut concatenated_answer: Vec<u8> = Vec::new();
@@ -340,14 +338,13 @@ impl Contract {
             return RevealMinerResult::Fail;
         }
 
-        if self.get_request_by_id_mut(request_id.clone()).is_none() {
-            log!("Request is not registered: {}", request_id);
-            return RevealMinerResult::Fail;
-        }
-
-        let complete_request = self
-            .get_request_by_id_mut(request_id.clone())
-            .map_or_else(|| panic!("Request not found"), |request| request);
+        let complete_request = match self.get_request_by_id_mut(request_id.clone()) {
+            Some(request) => request,
+            None => {
+                log!("Request is not registered: {}", request_id);
+                return RevealMinerResult::Fail;
+            }
+        };
 
         assert_eq!(
             Self::get_stage(complete_request.start_time),
@@ -376,6 +373,7 @@ impl Contract {
 
         save_proposal.answer = answer;
         save_proposal.is_revealed = true;
+        complete_request.miner_keys.push(miner);
 
         let reveal_miner_log = EventLog {
             standard: "emip001".to_string(),
@@ -386,6 +384,27 @@ impl Contract {
         env::log_str(&reveal_miner_log.to_string());
 
         RevealMinerResult::Success
+    }
+
+    pub fn get_list_miners_that_commit_and_reveal(&mut self, request_id: String) -> Vec<AccountId> {
+        //@dev Verify that request exist
+        if self.get_request_by_id_mut(request_id.clone()).is_none() {
+            panic!("Request is not registered: {}", request_id);
+        }
+
+        //@dev Obtain the request
+        let complete_request = self
+            .get_request_by_id_mut(request_id)
+            .map_or_else(|| panic!("Request not found"), |request| request);
+
+        //@dev Obtain the list after miner commit and reveal stage. Otherwise the list is empty
+        assert_eq!(
+            Self::get_stage(complete_request.start_time),
+            RequestState::CommitValidators,
+            "Not at RevealValidators stage"
+        );
+
+        complete_request.miner_keys.clone()
     }
 
     pub fn reveal_by_validator(&mut self, request_id: String, answer: Vec<AccountId>, message: String) -> RevealValidatorResult {
@@ -419,14 +438,13 @@ impl Contract {
             }
         }
 
-        if self.get_request_by_id_mut(request_id.clone()).is_none() {
-            log!("Request is not registered: {}", request_id);
-            return RevealValidatorResult::Fail;
-        }
-
-        let complete_request = self
-            .get_request_by_id_mut(request_id.clone())
-            .map_or_else(|| panic!("Request not found"), |request| request);
+        let complete_request = match self.get_request_by_id_mut(request_id.clone()) {
+            Some(request) => request,
+            None => {
+                log!("Request is not registered: {}", request_id);
+                return RevealValidatorResult::Fail;
+            }
+        };
 
         assert_eq!(
             Self::get_stage(complete_request.start_time),
@@ -498,7 +516,7 @@ impl Contract {
                 };
             } else {
                 complete_request.votes_for_miners.insert(addresses.clone(), 1);
-                complete_request.miner_keys.push(addresses);
+                //complete_request.miner_keys.push(addresses);
             }
         }
 
