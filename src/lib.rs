@@ -194,6 +194,10 @@ impl Contract {
         self.requests.get_mut(&request_id)
     }
 
+    fn get_request_by_id_not_mut(&self, request_id: Hash) -> Option<&Request> {
+        self.requests.get(&request_id)
+    }
+
     fn get_stage(start_time: u64) -> RequestState {
         let elapsed = env::block_timestamp() - start_time;
 
@@ -386,22 +390,22 @@ impl Contract {
         RevealMinerResult::Success
     }
 
-    pub fn get_list_miners_that_commit_and_reveal(&mut self, request_id: String) -> Vec<AccountId> {
+    pub fn get_list_miners_that_commit_and_reveal(&self, request_id: String) -> Vec<AccountId> {
         //@dev Verify that request exist
-        if self.get_request_by_id_mut(request_id.clone()).is_none() {
+        if !self.get_request_by_id(request_id.clone()) {
             panic!("Request is not registered: {}", request_id);
         }
 
         //@dev Obtain the request
         let complete_request = self
-            .get_request_by_id_mut(request_id)
+            .get_request_by_id_not_mut(request_id)
             .map_or_else(|| panic!("Request not found"), |request| request);
 
         //@dev Obtain the list after miner commit and reveal stage. Otherwise the list is empty
         assert_eq!(
             Self::get_stage(complete_request.start_time),
             RequestState::CommitValidators,
-            "Not at RevealValidators stage"
+            "Not at CommitValidators stage"
         );
 
         complete_request.miner_keys.clone()
