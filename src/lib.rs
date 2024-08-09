@@ -587,7 +587,7 @@ impl Contract {
             },
             None => log!("Miner not found"),
         }
-        
+
         "not found".to_string()
     }
 }

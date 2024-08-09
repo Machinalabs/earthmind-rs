@@ -26,7 +26,7 @@ register:
 
 request:
     echo "Sending request"
-    near call "$CONTRACT_ACCOUNT" request_governance_decision '{"message":"Testing Contract 8)"}' --accountId "$PROTOCOL_ACCOUNT"
+    near call "$CONTRACT_ACCOUNT" request_governance_decision '{"message":"TESTING CONTRACT V2"}' --accountId "$PROTOCOL_ACCOUNT"
 
 register_miner:
     echo "register miner"
