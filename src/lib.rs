@@ -26,10 +26,10 @@ impl Contract {
     #[init]
     pub fn new() -> Self {
         Self {
-            protocols: LookupMap::new(b"protocols".to_vec()),
-            requests: LookupMap::new(b"requests".to_vec()),
-            miners: LookupMap::new(b"miners".to_vec()),
-            validators: LookupMap::new(b"validators".to_vec()),
+            protocols: LookupMap::new(b"p".to_vec()),
+            requests: LookupMap::new(b"r".to_vec()),
+            miners: LookupMap::new(b"m".to_vec()),
+            validators: LookupMap::new(b"v".to_vec()),
         }
     }
 
@@ -158,9 +158,9 @@ impl Contract {
             sender: sender_account,
             request_id: new_request_id_hex.clone(),
             start_time,
-            miners_proposals: LookupMap::new(b"miner_proposal".to_vec()),
-            validators_proposals: LookupMap::new(b"validator_proposal".to_vec()),
-            votes_for_miners: LookupMap::new(b"votes_miners".to_vec()),
+            miners_proposals: LookupMap::new([b"miners", new_request_id_hex.as_bytes()].concat()),
+            validators_proposals: LookupMap::new([b"validators", new_request_id_hex.as_bytes()].concat()),
+            votes_for_miners: LookupMap::new([b"votes", new_request_id_hex.as_bytes()].concat()),
             miner_keys: Vec::new(),
             top_ten: Vec::new(),
         };
@@ -198,7 +198,7 @@ impl Contract {
         self.requests.get(&request_id)
     }
 
-    fn get_stage(start_time: u64) -> RequestState {
+    pub fn get_stage(start_time: u64) -> RequestState {
         let elapsed = env::block_timestamp() - start_time;
 
         if start_time == 0 {
@@ -217,7 +217,7 @@ impl Contract {
     }
 
     // A Read-Only Function
-    pub fn hash_miner_answer(self, miner: AccountId, request_id: Hash, answer: bool, message: String) -> Hash {
+    pub fn hash_miner_answer(miner: AccountId, request_id: Hash, answer: bool, message: String) -> Hash {
         let concatenated_answer = format!("{}{}{}{}", request_id, miner, answer, message);
         let value = env::keccak256(concatenated_answer.as_bytes());
 
@@ -269,7 +269,7 @@ impl Contract {
     }
 
     // A Read-Only Function
-    pub fn hash_validator_answer(self, validator: AccountId, request_id: String, answer: Vec<AccountId>, message: String) -> Hash {
+    pub fn hash_validator_answer(validator: AccountId, request_id: String, answer: Vec<AccountId>, message: String) -> Hash {
         require!(answer.len() == 10, "Invalid answer");
 
         let mut concatenated_answer: Vec<u8> = Vec::new();
@@ -366,9 +366,7 @@ impl Contract {
             return RevealMinerResult::Fail;
         }
 
-        let concatenated_answer = format!("{}{}{}{}", request_id, miner, answer, message);
-        let hash_value = env::keccak256(concatenated_answer.as_bytes());
-        let answer_to_verify = hex::encode(hash_value);
+        let answer_to_verify = Self::hash_miner_answer(miner.clone(), request_id.clone(), answer, message.clone());
 
         if save_proposal.proposal_hash != answer_to_verify {
             log!("Answer don't match");
@@ -487,22 +485,10 @@ impl Contract {
             }
         }
 
-        let mut concatenated_answer: Vec<u8> = Vec::new();
-
-        concatenated_answer.extend_from_slice(request_id.as_bytes());
-        concatenated_answer.extend_from_slice(validator.as_bytes());
-
-        let value: Vec<u8> = answer.iter().flat_map(|id| id.as_bytes()).copied().collect();
-        concatenated_answer.extend_from_slice(&value);
-        concatenated_answer.extend_from_slice(message.as_bytes());
-
-        let value = env::keccak256(&concatenated_answer);
-        let hash_answer = hex::encode(value);
+        let hash_answer = Self::hash_validator_answer(validator, request_id.clone(), answer.clone(), message.clone());
 
         if save_proposal.proposal_hash != hash_answer {
             log!("Answer don't match");
-            //log!("save answer: {}", save_proposal.proposal_hash);
-            //log!("hash_answer calculated: {}", hash_answer);
             return RevealValidatorResult::Fail;
         }
 
@@ -520,7 +506,6 @@ impl Contract {
                 };
             } else {
                 complete_request.votes_for_miners.insert(addresses.clone(), 1);
-                //complete_request.miner_keys.push(addresses);
             }
         }
 
@@ -587,6 +572,23 @@ impl Contract {
         };
         env::log_str(&top_ten_log.to_string());
         top_ten
+    }
+
+    pub fn get_request(&self, request_id: String, miner: AccountId) -> String {
+        let request = self.requests.get(&request_id);
+
+        match request {
+            Some(request) => match request.miners_proposals.get(&miner) {
+                Some(miner) => {
+                    log!("miner proposal: {:?}", miner);
+                    return miner.proposal_hash.clone();
+                }
+                None => log!("no proposal"),
+            },
+            None => log!("Miner not found"),
+        }
+        
+        "not found".to_string()
     }
 }
 
