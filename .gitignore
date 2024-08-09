@@ -8,3 +8,7 @@ target
 # Local files
 TODO.md
 .DS_Store
+
+# Environment files
+.env
+.env.*

@@ -26,13 +26,14 @@ impl Contract {
     #[init]
     pub fn new() -> Self {
         Self {
-            protocols: LookupMap::new(b"protocols".to_vec()),
-            requests: LookupMap::new(b"requests".to_vec()),
-            miners: LookupMap::new(b"miners".to_vec()),
-            validators: LookupMap::new(b"validators".to_vec()),
+            protocols: LookupMap::new(b"p".to_vec()),
+            requests: LookupMap::new(b"r".to_vec()),
+            miners: LookupMap::new(b"m".to_vec()),
+            validators: LookupMap::new(b"v".to_vec()),
         }
     }
 
+    #[payable]
     pub fn register_protocol(&mut self, culture: String, modules: Vec<Module>) -> RegisterProtocolResult {
         let new_account = env::predecessor_account_id();
         let registration_fee = env::attached_deposit();
@@ -70,6 +71,7 @@ impl Contract {
         self.protocols.contains_key(&account)
     }
 
+    #[payable]
     pub fn register_miner(&mut self) -> RegisterMinerResult {
         let new_miner_id = env::predecessor_account_id();
         let deposit = env::attached_deposit();
@@ -101,6 +103,7 @@ impl Contract {
         self.miners.contains_key(&miner_id)
     }
 
+    #[payable]
     pub fn register_validator(&mut self) -> RegisterValidatorResult {
         let new_validator_id = env::predecessor_account_id();
         let deposit = env::attached_deposit();
@@ -149,13 +152,15 @@ impl Contract {
             return RegisterRequestResult::AlreadyRegistered;
         }
 
+        let start_time = env::block_timestamp();
+
         let new_request = Request {
             sender: sender_account,
             request_id: new_request_id_hex.clone(),
-            start_time: env::block_timestamp(),
-            miners_proposals: LookupMap::new(b"miner_proposal".to_vec()),
-            validators_proposals: LookupMap::new(b"validator_proposal".to_vec()),
-            votes_for_miners: LookupMap::new(b"votes_miners".to_vec()),
+            start_time,
+            miners_proposals: LookupMap::new([b"miners", new_request_id_hex.as_bytes()].concat()),
+            validators_proposals: LookupMap::new([b"validators", new_request_id_hex.as_bytes()].concat()),
+            votes_for_miners: LookupMap::new([b"votes", new_request_id_hex.as_bytes()].concat()),
             miner_keys: Vec::new(),
             top_ten: Vec::new(),
         };
@@ -168,6 +173,11 @@ impl Contract {
             version: "1.0.0".to_string(),
             event: EventLogVariant::RegisterRequest(vec![RegisterRequestLog {
                 request_id: new_request_id_hex,
+                start_time,
+                reveal_miner_time: REVEAL_MINER_DURATION,
+                commit_miner_time: COMMIT_MINER_DURATION,
+                reveal_validator_time: REVEAL_VALIDATOR_DURATION,
+                commit_validator_time: COMMIT_VALIDATOR_DURATION,
             }]),
         };
 
@@ -184,7 +194,11 @@ impl Contract {
         self.requests.get_mut(&request_id)
     }
 
-    fn get_stage(start_time: u64) -> RequestState {
+    fn get_request_by_id_not_mut(&self, request_id: Hash) -> Option<&Request> {
+        self.requests.get(&request_id)
+    }
+
+    pub fn get_stage(start_time: u64) -> RequestState {
         let elapsed = env::block_timestamp() - start_time;
 
         if start_time == 0 {
@@ -202,9 +216,8 @@ impl Contract {
         }
     }
 
-    pub fn hash_miner_answer(self, request_id: Hash, answer: bool, message: String) -> Hash {
-        let miner = env::predecessor_account_id();
-
+    // A Read-Only Function
+    pub fn hash_miner_answer(miner: AccountId, request_id: Hash, answer: bool, message: String) -> Hash {
         let concatenated_answer = format!("{}{}{}{}", request_id, miner, answer, message);
         let value = env::keccak256(concatenated_answer.as_bytes());
 
@@ -255,9 +268,8 @@ impl Contract {
         }
     }
 
-    pub fn hash_validator_answer(self, request_id: String, answer: Vec<AccountId>, message: String) -> Hash {
-        let validator = env::predecessor_account_id();
-
+    // A Read-Only Function
+    pub fn hash_validator_answer(validator: AccountId, request_id: String, answer: Vec<AccountId>, message: String) -> Hash {
         require!(answer.len() == 10, "Invalid answer");
 
         let mut concatenated_answer: Vec<u8> = Vec::new();
@@ -330,14 +342,13 @@ impl Contract {
             return RevealMinerResult::Fail;
         }
 
-        if self.get_request_by_id_mut(request_id.clone()).is_none() {
-            log!("Request is not registered: {}", request_id);
-            return RevealMinerResult::Fail;
-        }
-
-        let complete_request = self
-            .get_request_by_id_mut(request_id.clone())
-            .map_or_else(|| panic!("Request not found"), |request| request);
+        let complete_request = match self.get_request_by_id_mut(request_id.clone()) {
+            Some(request) => request,
+            None => {
+                log!("Request is not registered: {}", request_id);
+                return RevealMinerResult::Fail;
+            }
+        };
 
         assert_eq!(
             Self::get_stage(complete_request.start_time),
@@ -355,9 +366,7 @@ impl Contract {
             return RevealMinerResult::Fail;
         }
 
-        let concatenated_answer = format!("{}{}{}{}", request_id, miner, answer, message);
-        let hash_value = env::keccak256(concatenated_answer.as_bytes());
-        let answer_to_verify = hex::encode(hash_value);
+        let answer_to_verify = Self::hash_miner_answer(miner.clone(), request_id.clone(), answer, message.clone());
 
         if save_proposal.proposal_hash != answer_to_verify {
             log!("Answer don't match");
@@ -366,6 +375,7 @@ impl Contract {
 
         save_proposal.answer = answer;
         save_proposal.is_revealed = true;
+        complete_request.miner_keys.push(miner);
 
         let reveal_miner_log = EventLog {
             standard: "emip001".to_string(),
@@ -376,6 +386,27 @@ impl Contract {
         env::log_str(&reveal_miner_log.to_string());
 
         RevealMinerResult::Success
+    }
+
+    pub fn get_list_miners_that_commit_and_reveal(&self, request_id: String) -> Vec<AccountId> {
+        //@dev Verify that request exist
+        if !self.get_request_by_id(request_id.clone()) {
+            panic!("Request is not registered: {}", request_id);
+        }
+
+        //@dev Obtain the request
+        let complete_request = self
+            .get_request_by_id_not_mut(request_id)
+            .map_or_else(|| panic!("Request not found"), |request| request);
+
+        //@dev Obtain the list after miner commit and reveal stage. Otherwise the list is empty
+        assert_eq!(
+            Self::get_stage(complete_request.start_time),
+            RequestState::CommitValidators,
+            "Not at CommitValidators stage"
+        );
+
+        complete_request.miner_keys.clone()
     }
 
     pub fn reveal_by_validator(&mut self, request_id: String, answer: Vec<AccountId>, message: String) -> RevealValidatorResult {
@@ -409,14 +440,13 @@ impl Contract {
             }
         }
 
-        if self.get_request_by_id_mut(request_id.clone()).is_none() {
-            log!("Request is not registered: {}", request_id);
-            return RevealValidatorResult::Fail;
-        }
-
-        let complete_request = self
-            .get_request_by_id_mut(request_id.clone())
-            .map_or_else(|| panic!("Request not found"), |request| request);
+        let complete_request = match self.get_request_by_id_mut(request_id.clone()) {
+            Some(request) => request,
+            None => {
+                log!("Request is not registered: {}", request_id);
+                return RevealValidatorResult::Fail;
+            }
+        };
 
         assert_eq!(
             Self::get_stage(complete_request.start_time),
@@ -455,22 +485,10 @@ impl Contract {
             }
         }
 
-        let mut concatenated_answer: Vec<u8> = Vec::new();
-
-        concatenated_answer.extend_from_slice(request_id.as_bytes());
-        concatenated_answer.extend_from_slice(validator.as_bytes());
-
-        let value: Vec<u8> = answer.iter().flat_map(|id| id.as_bytes()).copied().collect();
-        concatenated_answer.extend_from_slice(&value);
-        concatenated_answer.extend_from_slice(message.as_bytes());
-
-        let value = env::keccak256(&concatenated_answer);
-        let hash_answer = hex::encode(value);
+        let hash_answer = Self::hash_validator_answer(validator, request_id.clone(), answer.clone(), message.clone());
 
         if save_proposal.proposal_hash != hash_answer {
             log!("Answer don't match");
-            //log!("save answer: {}", save_proposal.proposal_hash);
-            //log!("hash_answer calculated: {}", hash_answer);
             return RevealValidatorResult::Fail;
         }
 
@@ -488,7 +506,6 @@ impl Contract {
                 };
             } else {
                 complete_request.votes_for_miners.insert(addresses.clone(), 1);
-                complete_request.miner_keys.push(addresses);
             }
         }
 
@@ -556,6 +573,23 @@ impl Contract {
         env::log_str(&top_ten_log.to_string());
         top_ten
     }
+
+    pub fn get_request(&self, request_id: String, miner: AccountId) -> String {
+        let request = self.requests.get(&request_id);
+
+        match request {
+            Some(request) => match request.miners_proposals.get(&miner) {
+                Some(miner) => {
+                    log!("miner proposal: {:?}", miner);
+                    return miner.proposal_hash.clone();
+                }
+                None => log!("no proposal"),
+            },
+            None => log!("Miner not found"),
+        }
+
+        "not found".to_string()
+    }
 }
 
 // Test private function "get_request_by_id_mut"
@@ -608,7 +642,7 @@ mod test {
 
         assert_eq!(
             logs[1],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b"}]}"#
+            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b","start_time":100000000,"reveal_miner_time":30000000000,"commit_miner_time":30000000000,"reveal_validator_time":30000000000,"commit_validator_time":30000000000}]}"#
         );
     }
 
@@ -642,7 +676,7 @@ mod test {
 
         assert_eq!(
             logs[1],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b"}]}"#
+            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b","start_time":100000000,"reveal_miner_time":30000000000,"commit_miner_time":30000000000,"reveal_validator_time":30000000000,"commit_validator_time":30000000000}]}"#
         );
 
         let context = get_context("account2.near".parse().unwrap(), 100000000, NearToken::from_yoctonear(10u128.pow(25)));
@@ -669,7 +703,7 @@ mod test {
         );
         assert_eq!(
             logs[1],
-            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"c4b35bc95d323446f6f800e7639457cddc34c7f768772e4871adf2dd34f89ed8"}]}"#
+            r#"EVENT_JSON:{"standard":"emip001","version":"1.0.0","event":"register_request","data":[{"request_id":"c4b35bc95d323446f6f800e7639457cddc34c7f768772e4871adf2dd34f89ed8","start_time":100000000,"reveal_miner_time":30000000000,"commit_miner_time":30000000000,"reveal_validator_time":30000000000,"commit_validator_time":30000000000}]}"#
         );
     }
 

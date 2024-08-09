@@ -1,4 +1,5 @@
 use near_workspaces::AccountId;
+
 use serde_json::json;
 
 use common::constants::{
@@ -37,7 +38,14 @@ fn test_request_governance_decision_when_is_registered_returns_already_registere
         },
         Log::Event {
             event_name: "register_request".to_string(),
-            data: vec![("request_id", json![DEFAULT_REQUEST_ID])],
+            data: vec![
+                ("request_id", json![DEFAULT_REQUEST_ID]),
+                ("start_time", json![1000000000]),
+                ("reveal_miner_time", json![30000000000_i64]),
+                ("commit_miner_time", json![30000000000_i64]),
+                ("reveal_validator_time", json![30000000000_i64]),
+                ("commit_validator_time", json![30000000000_i64]),
+            ],
         },
         Log::Message("Attempted to register an already registered request: 73ead60176d724e462dbfa8d49506177bb13bec748cf5af5019b6d1da63e204b".to_string()),
     ]);
@@ -47,16 +55,14 @@ fn test_request_governance_decision_when_is_registered_returns_already_registere
 
 #[test]
 fn test_hash_miner_answer() {
-    let contract = Contract::new();
-
     let miner = get_default_miner_account();
-    Environment::with_account(miner).create();
+    Environment::with_account(miner.clone()).create();
 
     let request_id = DEFAULT_REQUEST_ID.to_string();
     let answer = true;
     let message = "It's a cool NFT".to_string();
 
-    let result = contract.hash_miner_answer(request_id, answer, message);
+    let result = Contract::hash_miner_answer(miner, request_id, answer, message);
 
     assert_eq!(result, DEFAULT_MINER_ANSWER);
 }
@@ -64,16 +70,14 @@ fn test_hash_miner_answer() {
 // Hash validator answer
 #[test]
 fn test_hash_validator_answer() {
-    let contract = Contract::new();
-
     let validator = get_default_validator_account();
-    Environment::with_account(validator).create();
+    Environment::with_account(validator.clone()).create();
 
     let request_id = DEFAULT_REQUEST_ID.to_string();
     let answer = generate_validator_answer();
     let message = "It's a cool NFT".to_string();
 
-    let result = contract.hash_validator_answer(request_id, answer, message);
+    let result = Contract::hash_validator_answer(validator, request_id, answer, message);
 
     assert_eq!(result, DEFAULT_VALIDATOR_ANSWER);
 }
@@ -81,15 +85,13 @@ fn test_hash_validator_answer() {
 #[test]
 #[should_panic]
 fn test_hash_validator_answer_when_answer_is_not_complete() {
-    let contract = Contract::new();
-
     let validator = get_default_validator_account();
-    Environment::with_account(validator).create();
+    Environment::with_account(validator.clone()).create();
 
     let request_id = DEFAULT_REQUEST_ID.to_string();
     let answer = generate_validator_answer();
     let answer: Vec<AccountId> = answer[0..answer.len() - 1].to_vec();
     let message = "It's a cool NFT".to_string();
 
-    contract.hash_validator_answer(request_id, answer, message);
+    Contract::hash_validator_answer(validator, request_id, answer, message);
 }
